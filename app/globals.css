@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --background: #020617;
+  --foreground: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Leaflet map container fix */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #1e293b;
+  font-family: inherit;
+}
+
+/* Leaflet popup styling */
+.leaflet-popup-content-wrapper {
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-tip {
+  background: #1e293b;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #f1f5f9 !important;
+}
+
+/* Custom map marker styles */
+.user-location-marker {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+  animation: pulse-blue 2s infinite;
+}
+
+.shelter-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.shelter-marker-available {
+  background: #10b981;
+}
+
+.shelter-marker-caution {
+  background: #f59e0b;
+}
+
+.shelter-marker-full {
+  background: #ef4444;
+}
+
+.shelter-marker-inactive {
+  background: #475569;
+}
+
+.team-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes pulse-blue {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Utility classes */
+.status-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Emergency text animation */
+@keyframes emergency-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.emergency-flash {
+  animation: emergency-flash 1.5s ease-in-out infinite;
+}
