@@ -1,0 +1,37 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "close": "Close",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "citizen": "Citizen Portal",
+    "authority": "Authority Dashboard"
+  },
+  "alerts": {
+    "floodWarning": "Flood Warning",
+    "evacuate": "Evacuate Immediately",
+    "official": "Official Warning",
+    "recommendation": "System Recommendation"
+  },
+  "shelter": {
+    "available": "Available",
+    "full": "Full",
+    "capacity": "Capacity",
+    "occupancy": "Current Occupancy"
+  },
+  "route": {
+    "safe": "Safe Route",
+    "blocked": "Route Blocked",
+    "recalculating": "Recalculating safer route...",
+    "noRoute": "No safe route currently available"
+  },
+  "incident": {
+    "report": "Report Incident",
+    "submitted": "Report Submitted",
+    "helpTitle": "I Need Help"
+  }
+}
