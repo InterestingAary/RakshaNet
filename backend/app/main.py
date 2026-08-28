@@ -3,12 +3,15 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
+from app.api.v1.auth import router as auth_router
 
 app = FastAPI(
     title=settings.app_name,
     description="Adaptive Emergency Evacuation & Relocation Intelligence System",
     version=settings.app_version,
 )
+
+app.include_router(auth_router, prefix="/api/v1")
 
 
 @app.get("/")
