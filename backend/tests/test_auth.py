@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from jose import jwt
 
 from app.api.v1.auth import (
@@ -15,6 +16,7 @@ from app.api.v1.auth import (
     require_citizen,
 )
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import ROLE_AUTHORITY, ROLE_CITIZEN, User
 from app.schemas.user import UserCreate, UserResponse
@@ -51,10 +53,16 @@ class AuthTests(unittest.TestCase):
     def setUpClass(cls):
         cls.original_secret = settings.jwt_secret_key
         settings.jwt_secret_key = "test-only-secret"
+        from app.main import app
+
+        cls.client = TestClient(app)
+        cls.session = FakeSession()
+        app.dependency_overrides[get_db] = lambda: cls.session
 
     @classmethod
     def tearDownClass(cls):
         settings.jwt_secret_key = cls.original_secret
+        cls.client.app.dependency_overrides.clear()
 
     def make_user(self, role=ROLE_CITIZEN, active=True):
         return User(
@@ -82,6 +90,41 @@ class AuthTests(unittest.TestCase):
         self.assertTrue(verify_password("password123", user.hashed_password))
         self.assertNotIn("hashed_password", UserResponse.model_validate(user).model_dump())
 
+    def test_register_endpoint_normalizes_email_and_hides_password(self):
+        self.session.user = None
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "New User",
+                "email": "  NEW@example.com ",
+                "password": "password123",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["email"], "new@example.com")
+        self.assertNotIn("hashed_password", response.json())
+
+    def test_invalid_registration_data_returns_422(self):
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={"full_name": "", "email": "not-an-email", "password": "short"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_bcrypt_oversized_password_returns_422(self):
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "Valid Name",
+                "email": "valid@example.com",
+                "password": "a" * 73,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
     def test_duplicate_email_registration_is_rejected(self):
         existing = self.make_user()
         data = UserCreate(
@@ -107,6 +150,16 @@ class AuthTests(unittest.TestCase):
     def test_invalid_login_is_rejected_without_detail(self):
         user = self.make_user()
         form = SimpleNamespace(username=user.email, password="wrong-password")
+
+        with self.assertRaises(HTTPException) as error:
+            login(form, FakeSession(user))
+
+        self.assertEqual(error.exception.status_code, 401)
+        self.assertEqual(error.exception.detail, "Invalid email or password")
+
+    def test_inactive_user_login_is_rejected(self):
+        user = self.make_user(active=False)
+        form = SimpleNamespace(username=user.email, password="password123")
 
         with self.assertRaises(HTTPException) as error:
             login(form, FakeSession(user))
@@ -148,6 +201,20 @@ class AuthTests(unittest.TestCase):
 
         self.assertEqual(result, user)
         self.assertNotIn("hashed_password", UserResponse.model_validate(result).model_dump())
+
+    def test_me_endpoint_requires_authentication_and_returns_safe_user(self):
+        self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 401)
+
+        user = self.make_user()
+        self.session.user = user
+        response = self.client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {create_access_token(user.id)}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["email"], user.email)
+        self.assertNotIn("hashed_password", response.json())
 
     def test_role_authorization(self):
         citizen = self.make_user(ROLE_CITIZEN)
