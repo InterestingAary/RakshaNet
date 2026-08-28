@@ -50,3 +50,26 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=150)
+    phone: str | None = Field(default=None, max_length=30)
+    password: SecretStr | None = Field(default=None, min_length=8, max_length=128)
+
+    @field_validator("full_name")
+    @classmethod
+    def normalize_full_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Full name cannot be blank")
+        return normalized
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_bytes(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and len(value.get_secret_value().encode("utf-8")) > 72:
+            raise ValueError("Password is too long")
+        return value

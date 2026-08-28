@@ -15,16 +15,18 @@ from app.api.v1.auth import (
     require_authority,
     require_citizen,
 )
+from app.api.v1.users import get_user, list_users, update_me
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import ROLE_AUTHORITY, ROLE_CITIZEN, User
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 
 class FakeSession:
     def __init__(self, user=None):
         self.user = user
+        self.users = [user] if user else []
         self.added_user = None
         self.committed = False
 
@@ -47,6 +49,9 @@ class FakeSession:
     def get(self, _model, user_id):
         return self.user if self.user and self.user.id == user_id else None
 
+    def scalars(self, _statement):
+        return SimpleNamespace(all=lambda: self.users)
+
 
 class AuthTests(unittest.TestCase):
     @classmethod
@@ -55,6 +60,7 @@ class AuthTests(unittest.TestCase):
         settings.jwt_secret_key = "test-only-secret"
         from app.main import app
 
+        cls.app = app
         cls.client = TestClient(app)
         cls.session = FakeSession()
         app.dependency_overrides[get_db] = lambda: cls.session
@@ -226,6 +232,83 @@ class AuthTests(unittest.TestCase):
             require_citizen(authority)
         with self.assertRaisesRegex(HTTPException, "Authority role required"):
             require_authority(citizen)
+
+    def test_authority_can_list_and_retrieve_users(self):
+        authority = self.make_user(ROLE_AUTHORITY)
+        citizen = self.make_user(ROLE_CITIZEN)
+        self.session.user = citizen
+        self.session.users = [authority, citizen]
+        self.app.dependency_overrides[get_current_user] = lambda: authority
+
+        listing = self.client.get("/api/v1/users")
+        retrieved = self.client.get(f"/api/v1/users/{citizen.id}")
+
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(len(listing.json()), 2)
+        self.assertEqual(retrieved.status_code, 200)
+        self.assertEqual(retrieved.json()["id"], str(citizen.id))
+        self.assertEqual(retrieved.json()["role"], ROLE_CITIZEN)
+        self.assertTrue(retrieved.json()["is_active"])
+        self.assertNotIn("hashed_password", retrieved.json())
+        self.app.dependency_overrides.pop(get_current_user, None)
+
+    def test_citizen_is_forbidden_from_user_management(self):
+        citizen = self.make_user(ROLE_CITIZEN)
+        self.app.dependency_overrides[get_current_user] = lambda: citizen
+
+        response = self.client.get("/api/v1/users")
+
+        self.assertEqual(response.status_code, 403)
+        self.app.dependency_overrides.pop(get_current_user, None)
+
+    def test_user_management_requires_authentication(self):
+        self.assertEqual(self.client.get("/api/v1/users").status_code, 401)
+        self.assertEqual(
+            self.client.get(f"/api/v1/users/{uuid4()}").status_code,
+            401,
+        )
+
+    def test_user_management_rejects_invalid_token(self):
+        response = self.client.get(
+            "/api/v1/users",
+            headers={"Authorization": "Bearer invalid-token"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_user_retrieval_returns_not_found_for_unknown_user(self):
+        authority = self.make_user(ROLE_AUTHORITY)
+        self.app.dependency_overrides[get_current_user] = lambda: authority
+
+        response = self.client.get(f"/api/v1/users/{uuid4()}")
+
+        self.assertEqual(response.status_code, 404)
+        self.app.dependency_overrides.pop(get_current_user, None)
+
+    def test_authenticated_user_can_update_own_profile_without_changing_role(self):
+        user = self.make_user()
+        data = UserUpdate(full_name="Updated Name", phone="1234567890", password="newpassword")
+        session = FakeSession(user)
+
+        result = update_me(data, user, session)
+
+        self.assertEqual(result.full_name, "Updated Name")
+        self.assertEqual(result.phone, "1234567890")
+        self.assertEqual(result.role, ROLE_CITIZEN)
+        self.assertTrue(verify_password("newpassword", result.hashed_password))
+        self.assertNotIn("hashed_password", UserResponse.model_validate(result).model_dump())
+
+    def test_update_endpoint_rejects_unauthenticated_and_invalid_data(self):
+        self.assertEqual(self.client.patch("/api/v1/users/me", json={}).status_code, 401)
+        user = self.make_user()
+        self.session.user = user
+        self.app.dependency_overrides[get_current_user] = lambda: user
+        response = self.client.patch(
+            "/api/v1/users/me",
+            json={"full_name": "", "password": "short"},
+        )
+        self.assertEqual(response.status_code, 422)
+        self.app.dependency_overrides.pop(get_current_user, None)
 
 
 if __name__ == "__main__":
