@@ -9,7 +9,6 @@ class UserCreate(BaseModel):
     email: str = Field(min_length=1, max_length=255)
     phone: str | None = Field(default=None, max_length=30)
     password: SecretStr = Field(min_length=8, max_length=128)
-    role: str = Field(default="user", min_length=1, max_length=50)
 
 
 class UserResponse(BaseModel):

@@ -8,6 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
 
+ROLE_CITIZEN = "CITIZEN"
+ROLE_AUTHORITY = "AUTHORITY"
+
+
 def utc_now(_context) -> datetime:
     return datetime.now(timezone.utc)
 
