@@ -1,5 +1,6 @@
 from app.schemas.disaster import DisasterCreate, DisasterResponse, DisasterUpdate
 from app.schemas.incident import IncidentCreate, IncidentResponse, IncidentUpdate
+from app.schemas.shelter import ShelterCreate, ShelterResponse, ShelterUpdate
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 __all__ = [
@@ -9,6 +10,9 @@ __all__ = [
 	"DisasterCreate",
 	"DisasterResponse",
 	"DisasterUpdate",
+	"ShelterCreate",
+	"ShelterResponse",
+	"ShelterUpdate",
 	"UserCreate",
 	"UserResponse",
 	"UserUpdate",
