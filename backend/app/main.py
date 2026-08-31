@@ -9,6 +9,7 @@ from app.api.v1.incidents import router as incidents_router
 from app.api.v1.disasters import router as disasters_router
 from app.api.v1.shelters import router as shelters_router
 from app.api.v1.reports import router as reports_router
+from app.api.v1.relocation import router as relocation_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -22,6 +23,7 @@ app.include_router(incidents_router, prefix="/api/v1")
 app.include_router(disasters_router, prefix="/api/v1")
 app.include_router(shelters_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
+app.include_router(relocation_router, prefix="/api/v1")
 
 
 @app.get("/")
