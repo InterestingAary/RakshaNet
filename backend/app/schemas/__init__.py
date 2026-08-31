@@ -1,5 +1,6 @@
 from app.schemas.disaster import DisasterCreate, DisasterResponse, DisasterUpdate
 from app.schemas.incident import IncidentCreate, IncidentResponse, IncidentUpdate
+from app.schemas.replanning import ReplanningRecommendation
 from app.schemas.relocation import RelocationRecommendation, RelocationRequest
 from app.schemas.report import ReportCreate, ReportResponse, ReportUpdate
 from app.schemas.shelter import ShelterCreate, ShelterResponse, ShelterUpdate
@@ -15,6 +16,7 @@ __all__ = [
 	"ReportCreate",
 	"ReportResponse",
 	"ReportUpdate",
+	"ReplanningRecommendation",
 	"RelocationRecommendation",
 	"RelocationRequest",
 	"ShelterCreate",
