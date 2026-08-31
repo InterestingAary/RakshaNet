@@ -10,7 +10,9 @@ from app.core.database import get_db
 from app.models.disaster import Disaster, DisasterStatus
 from app.models.shelter import Shelter, ShelterStatus
 from app.models.user import User
+from app.schemas.replanning import ReplanningRecommendation
 from app.schemas.relocation import RelocationRecommendation, RelocationRequest
+from app.services.replanning import build_relocation_recommendation
 
 router = APIRouter(prefix="/relocation", tags=["relocation"])
 
@@ -90,3 +92,25 @@ def recommend_shelter(
         latitude=shelter.latitude,
         longitude=shelter.longitude,
     )
+
+
+@router.post("/refresh", response_model=ReplanningRecommendation)
+def refresh_relocation_recommendation(
+    request_data: RelocationRequest,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        recommendation = build_relocation_recommendation(
+            db,
+            request_data.latitude,
+            request_data.longitude,
+            request_data.disaster_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return recommendation
