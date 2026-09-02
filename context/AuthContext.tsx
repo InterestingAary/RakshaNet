@@ -18,6 +18,7 @@ import { authService } from '@/services/authService';
 
 interface AuthContextValue {
   user: AuthUser | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -53,25 +54,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const restoreSession = async () => {
       try {
-        const stored = localStorage.getItem(SESSION_KEY);
+        const stored = localStorage.getItem(SESSION_KEY) ?? localStorage.getItem('sih_auth_user');
         if (!stored) {
           if (mountedRef.current) setIsLoading(false);
           return;
         }
 
-        const parsed: AuthUser = JSON.parse(stored);
-        // Validate the persisted token is still valid
-        const validated = await authService.validateSession(parsed.token);
+        const parsed = JSON.parse(stored) as Partial<AuthUser>;
+        const token = typeof parsed.token === 'string' ? parsed.token : '';
+        if (!token) {
+          localStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem('sih_auth_user');
+          if (mountedRef.current) setIsLoading(false);
+          return;
+        }
+
+        const validated = await authService.validateSession(token);
         if (mountedRef.current) {
           if (validated) {
-            setUser(parsed);
+            setUser(validated);
+            localStorage.setItem(SESSION_KEY, JSON.stringify(validated));
+            localStorage.setItem('sih_auth_user', JSON.stringify(validated));
           } else {
             localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem('sih_auth_user');
+            setUser(null);
           }
         }
       } catch {
-        // Corrupted storage or network error — clear silently
         localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem('sih_auth_user');
+        if (mountedRef.current) setUser(null);
       } finally {
         if (mountedRef.current) setIsLoading(false);
       }
@@ -117,6 +130,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      token: user?.token ?? null,
       isAuthenticated: user !== null,
       isLoading,
       login,
