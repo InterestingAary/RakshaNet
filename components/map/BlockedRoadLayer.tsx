@@ -24,7 +24,7 @@ export default function BlockedRoadLayer({ incidents }: BlockedRoadLayerProps) {
   if (!incidents || incidents.length === 0) return null;
 
   const blockedIncidents = incidents.filter(
-    (i) => BLOCKED_TYPES.has(i.type) && i.status !== 'resolved',
+    (i) => BLOCKED_TYPES.has(i.type) && i.status !== 'resolved' && i.location !== null,
   );
 
   if (blockedIncidents.length === 0) return null;
@@ -34,7 +34,7 @@ export default function BlockedRoadLayer({ incidents }: BlockedRoadLayerProps) {
       {blockedIncidents.map((incident) => (
         <CircleMarker
           key={`blocked-${incident.id}`}
-          center={[incident.location.lat, incident.location.lng]}
+          center={[incident.location!.lat, incident.location!.lng]}
           radius={12}
           pathOptions={{
             color:       '#991b1b',
