@@ -23,8 +23,8 @@ import { Shelter, LatLng } from '@/types';
 const EmergencyMap = dynamic(() => import('@/components/map/EmergencyMap'), { ssr: false });
 
 function CitizenPortalInner() {
-  const { hazardZones, shelters, incidents } = useDisaster();
-  const { route, isLoadingRoute, requestRoute, clearRoute } = useRoute();
+  const { hazardZones, shelters, incidents, activeDisaster } = useDisaster();
+  const { route, isLoadingRoute, requestRoute, refreshRoute, clearRoute } = useRoute();
   const { location, setManualLocation } = useLocation();
 
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
@@ -54,7 +54,7 @@ function CitizenPortalInner() {
 
   const handleRequestRoute = (shelter: Shelter) => {
     if (location) {
-      requestRoute(location, shelter.id);
+      requestRoute(location, shelter.id, activeDisaster?.id);
       setSelectedShelter(null);
     } else {
       alert("Please enable location to get directions.");
@@ -116,7 +116,7 @@ function CitizenPortalInner() {
             <EvacuationPanel 
               route={route}
               isLoading={isLoadingRoute}
-              onRecalculate={() => route && location ? requestRoute(location, route.toShelterId) : null}
+              onRecalculate={() => route && location ? refreshRoute(location, route.toShelterId, activeDisaster?.id) : null}
               onClearRoute={clearRoute}
             />
 

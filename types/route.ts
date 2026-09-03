@@ -17,8 +17,14 @@ export interface EvacuationRoute {
   waypoints: LatLng[];
   status: 'safe' | 'caution' | 'blocked' | 'recalculating';
   distanceKm: number;
-  estimatedTimeMin: number;
+  estimatedTimeMin?: number;
   warnings: RouteWarning[];
   alternativeAvailable: boolean;
   calculatedAt: Date;
+  availableCapacity?: number;
+  riskFlags?: string[];
+  riskScore?: number;
+  recommendationReason?: string | null;
+  disasterId?: string | null;
+  toLocation?: LatLng;
 }
