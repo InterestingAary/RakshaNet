@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { EvacuationRoute, RouteWarning } from '@/types';
+import { EvacuationRoute } from '@/types';
 import { Navigation, Loader2, AlertOctagon, AlertTriangle, CheckCircle, Clock, MapPin, X, RefreshCw } from 'lucide-react';
 
 interface EvacuationPanelProps {
@@ -87,14 +87,16 @@ export function EvacuationPanel({ route, isLoading, onRecalculate, onClearRoute 
             {renderStatusBanner()}
             
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
-                  <Clock className="w-4 h-4" /> Est. Time
+              {route.estimatedTimeMin !== undefined && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
+                    <Clock className="w-4 h-4" /> Est. Time
+                  </div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
+                    {route.estimatedTimeMin} min
+                  </div>
                 </div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">
-                  {route.estimatedTimeMin} min
-                </div>
-              </div>
+              )}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
                   <MapPin className="w-4 h-4" /> Distance

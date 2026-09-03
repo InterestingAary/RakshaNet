@@ -12,7 +12,8 @@ interface UseRouteReturn {
   route: EvacuationRoute | null;
   isLoadingRoute: boolean;
   routeError: string | null;
-  requestRoute: (from: LatLng, toShelterId: string) => Promise<void>;
+  requestRoute: (from: LatLng, toShelterId: string, disasterId?: string) => Promise<void>;
+  refreshRoute: (from: LatLng, toShelterId: string, disasterId?: string) => Promise<void>;
   clearRoute: () => void;
   routeStatus: string;
   isRouteBlocked: boolean;
@@ -25,7 +26,7 @@ export function useRoute(): UseRouteReturn {
   const abortRef = useRef<AbortController | null>(null);
 
   const requestRoute = useCallback(
-    async (from: LatLng, toShelterId: string): Promise<void> => {
+    async (from: LatLng, toShelterId: string, disasterId?: string): Promise<void> => {
       // Cancel any in-flight request
       abortRef.current?.abort();
       abortRef.current = new AbortController();
@@ -37,7 +38,8 @@ export function useRoute(): UseRouteReturn {
         const computed = await routingService.getEvacuationRoute(
           from,
           toShelterId,
-          abortRef.current.signal
+          abortRef.current.signal,
+          disasterId,
         );
         setRoute(computed);
       } catch (err) {
@@ -48,6 +50,29 @@ export function useRoute(): UseRouteReturn {
         const message =
           err instanceof Error ? err.message : 'Failed to calculate route';
         setRouteError(message);
+        setRoute(null);
+      } finally {
+        setIsLoadingRoute(false);
+      }
+    },
+    []
+  );
+
+  const refreshRoute = useCallback(
+    async (from: LatLng, toShelterId: string, disasterId?: string): Promise<void> => {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      setIsLoadingRoute(true);
+      setRouteError(null);
+
+      try {
+        const computed = await routingService.refreshEvacuationRoute(
+          from, toShelterId, abortRef.current.signal, disasterId
+        );
+        setRoute(computed);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setRouteError(err instanceof Error ? err.message : 'Failed to refresh route');
         setRoute(null);
       } finally {
         setIsLoadingRoute(false);
@@ -76,6 +101,7 @@ export function useRoute(): UseRouteReturn {
     isLoadingRoute,
     routeError,
     requestRoute,
+    refreshRoute,
     clearRoute,
     routeStatus,
     isRouteBlocked,
