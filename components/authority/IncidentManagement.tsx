@@ -23,7 +23,7 @@ export default function IncidentManagement({ incidents, teams, onUpdateStatus, o
     return true;
   });
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity: string | null) => {
     switch (severity) {
       case 'critical': return 'text-red-400 bg-red-400/10 border-red-400/20';
       case 'high': return 'text-orange-400 bg-orange-400/10 border-orange-400/20';

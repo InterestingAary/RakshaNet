@@ -36,7 +36,7 @@ function formatTimestamp(ts: string): string {
 export default function IncidentLayer({ incidents, onIncidentClick }: IncidentLayerProps) {
   if (!incidents || incidents.length === 0) return null;
 
-  const visible = incidents.filter((i) => i.status !== 'resolved');
+  const visible = incidents.filter((i) => i.status !== 'resolved' && i.location !== null);
 
   return (
     <>
@@ -50,7 +50,7 @@ export default function IncidentLayer({ incidents, onIncidentClick }: IncidentLa
         return (
           <CircleMarker
             key={incident.id}
-            center={[incident.location.lat, incident.location.lng]}
+            center={[incident.location!.lat, incident.location!.lng]}
             radius={style.radius}
             pathOptions={{
               color:       style.color,

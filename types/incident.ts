@@ -10,7 +10,7 @@ export interface IncidentReport {
     | 'fire'
     | 'trapped'
     | 'other';
-  location: LatLng;
+  location: LatLng | null;
   address: string;
   description: string;
   imageUrl: string | null;
@@ -18,7 +18,7 @@ export interface IncidentReport {
   reportedBy: 'citizen' | 'authority' | 'system';
   reporterName: string | null;
   status: 'new' | 'reviewing' | 'critical' | 'assigned' | 'resolved';
-  severity: Severity;
+  severity: Severity | null;
   assignedTeamId: string | null;
   affectsRouteId: string | null;
   reportedAt: Date;

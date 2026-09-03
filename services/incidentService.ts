@@ -1,72 +1,118 @@
-import { IncidentReport, NeedHelpRequest } from '@/types';
-import { MOCK_INCIDENTS } from '@/mock/incidentData';
+import { apiClient } from '@/lib/apiClient';
+import { authService } from '@/services/authService';
+import type { IncidentReport, NeedHelpRequest } from '@/types';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+interface BackendReport {
+  id: string;
+  title: string;
+  description: string;
+  report_type: 'SAFETY' | 'INFRASTRUCTURE' | 'WATER' | 'MEDICAL' | 'UTILITY' | 'ENVIRONMENT' | 'OTHER';
+  status: 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED' | 'REJECTED';
+  latitude: number | null;
+  longitude: number | null;
+  location: string | null;
+  created_by_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
-let mockIncidents = [...MOCK_INCIDENTS];
+const REPORT_TYPE_TO_INCIDENT_TYPE: Record<BackendReport['report_type'], IncidentReport['type']> = {
+  SAFETY: 'other',
+  INFRASTRUCTURE: 'road_blocked',
+  WATER: 'flooded_route',
+  MEDICAL: 'medical_emergency',
+  UTILITY: 'other',
+  ENVIRONMENT: 'other',
+  OTHER: 'other',
+};
+
+const REPORT_STATUS_TO_INCIDENT_STATUS: Record<BackendReport['status'], IncidentReport['status']> = {
+  OPEN: 'new',
+  UNDER_REVIEW: 'reviewing',
+  RESOLVED: 'resolved',
+  REJECTED: 'resolved',
+};
+
+function mapReport(report: BackendReport): IncidentReport {
+  return {
+    id: report.id,
+    type: REPORT_TYPE_TO_INCIDENT_TYPE[report.report_type],
+    location:
+      report.latitude !== null && report.longitude !== null
+        ? { lat: report.latitude, lng: report.longitude }
+        : null,
+    address: report.location ?? '',
+    description: report.description,
+    imageUrl: null,
+    videoUrl: null,
+    reportedBy: 'citizen',
+    reporterName: null,
+    status: REPORT_STATUS_TO_INCIDENT_STATUS[report.status],
+    severity: null,
+    assignedTeamId: null,
+    affectsRouteId: null,
+    reportedAt: new Date(report.created_at),
+    updatedAt: new Date(report.updated_at),
+  };
+}
+
+function mapIncidentPayload(data: Omit<IncidentReport, 'id' | 'reportedAt' | 'updatedAt' | 'status'>) {
+  const incidentType = String(data.type).toLowerCase();
+  const reportType = incidentType.includes('medical')
+    ? 'MEDICAL'
+    : incidentType.includes('flood')
+      ? 'WATER'
+      : incidentType.includes('road') || incidentType.includes('tree') || incidentType.includes('damage')
+        ? 'INFRASTRUCTURE'
+        : 'OTHER';
+
+  return {
+    title: String(data.type).slice(0, 200),
+    description: data.description,
+    report_type: reportType,
+    latitude: data.location?.lat ?? null,
+    longitude: data.location?.lng ?? null,
+    location: data.address || null,
+  };
+}
+
+const requestOptions = () => ({ headers: authService.getAuthHeaders() });
 
 export const incidentService = {
   async getIncidents(): Promise<IncidentReport[]> {
-    await delay(300);
-    return [...mockIncidents];
+    const reports = await apiClient.get<BackendReport[]>('/api/v1/reports', requestOptions());
+    return reports.map(mapReport);
   },
 
-  async getIncident(id: string): Promise<IncidentReport | null> {
-    await delay(200);
-    return mockIncidents.find(inc => inc.id === id) || null;
+  async getIncident(id: string): Promise<IncidentReport> {
+    const report = await apiClient.get<BackendReport>(`/api/v1/reports/${id}`, requestOptions());
+    return mapReport(report);
   },
 
   async submitIncident(data: Omit<IncidentReport, 'id' | 'reportedAt' | 'updatedAt' | 'status'>): Promise<IncidentReport> {
-    await delay(400);
-    const newIncident: IncidentReport = {
-      ...data,
-      id: `inc-${Date.now()}`,
-      status: 'new',
-      reportedAt: new Date(),
-      updatedAt: new Date()
-    } as IncidentReport;
-    
-    mockIncidents = [newIncident, ...mockIncidents];
-    return newIncident;
+    const report = await apiClient.post<BackendReport>(
+      '/api/v1/reports',
+      mapIncidentPayload(data),
+      requestOptions(),
+    );
+    return mapReport(report);
   },
 
   async updateIncidentStatus(id: string, status: IncidentReport['status']): Promise<IncidentReport> {
-    await delay(300);
-    const incidentIndex = mockIncidents.findIndex(inc => inc.id === id);
-    if (incidentIndex === -1) throw new Error('Incident not found');
-    
-    const updated = { 
-      ...mockIncidents[incidentIndex], 
-      status, 
-      updatedAt: new Date() 
-    };
-    mockIncidents[incidentIndex] = updated;
-    return updated;
+    const backendStatus = status === 'reviewing' ? 'UNDER_REVIEW' : status === 'resolved' ? 'RESOLVED' : 'OPEN';
+    const report = await apiClient.patch<BackendReport>(
+      `/api/v1/reports/${id}`,
+      { status: backendStatus },
+      requestOptions(),
+    );
+    return mapReport(report);
   },
 
   async assignTeam(incidentId: string, teamId: string): Promise<IncidentReport> {
-    await delay(300);
-    const incidentIndex = mockIncidents.findIndex(inc => inc.id === incidentId);
-    if (incidentIndex === -1) throw new Error('Incident not found');
-    
-    const updated = { 
-      ...mockIncidents[incidentIndex], 
-      assignedTeamId: teamId,
-      status: 'assigned' as IncidentReport['status'],
-      updatedAt: new Date() 
-    };
-    mockIncidents[incidentIndex] = updated;
-    return updated;
+    throw new Error(`Report team assignment is not supported by the backend (team ${teamId}, report ${incidentId})`);
   },
 
   async submitNeedHelp(data: Omit<NeedHelpRequest, 'id' | 'submittedAt' | 'status' | 'reportId'>): Promise<NeedHelpRequest> {
-    await delay(400);
-    const newRequest: NeedHelpRequest = {
-      ...data,
-      id: `help-${Date.now()}`,
-      status: 'submitted',
-      submittedAt: new Date()
-    } as NeedHelpRequest;
-    return newRequest;
+    throw new Error(`Emergency help requests are not supported by the report API (${data.category})`);
   }
 };
