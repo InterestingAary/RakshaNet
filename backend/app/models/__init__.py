@@ -19,4 +19,5 @@ __all__ = [
 	"Shelter",
 	"ShelterStatus",
 	"User",
+	"HazardZone",
 ]

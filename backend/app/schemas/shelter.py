@@ -63,6 +63,10 @@ class ShelterUpdate(BaseModel):
         return self
 
 
+class ShelterVerify(BaseModel):
+    verified: bool = True
+
+
 class ShelterResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -75,6 +79,7 @@ class ShelterResponse(BaseModel):
     total_capacity: int
     current_occupancy: int
     status: ShelterStatus
+    verified: bool = False
     created_by_id: UUID
     created_at: datetime
     updated_at: datetime
@@ -83,3 +88,23 @@ class ShelterResponse(BaseModel):
     @property
     def available_capacity(self) -> int:
         return self.total_capacity - self.current_occupancy
+
+
+class CitizenCoordinates(BaseModel):
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+
+
+class ShelterWithDistanceResponse(ShelterResponse):
+    distance_meters: float
+    distance_km: float
+
+
+class ShelterRecommendationResponse(BaseModel):
+    recommended_shelter: ShelterWithDistanceResponse | None = None
+    distance_meters: float | None = None
+    distance_km: float | None = None
+    available_capacity: int | None = None
+    citizen_location: CitizenCoordinates
+    available_shelters: list[ShelterWithDistanceResponse] = []
+

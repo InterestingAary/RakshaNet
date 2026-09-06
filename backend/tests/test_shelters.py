@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.api.v1.auth import get_current_user
+from app.api.v1.shelters import get_optional_user
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.main import app
@@ -26,6 +27,8 @@ class FakeShelterSession:
 
     def refresh(self, shelter):
         shelter.status = shelter.status or ShelterStatus.ACTIVE
+        if getattr(shelter, "verified", None) is None:
+            shelter.verified = False
         shelter.created_at = shelter.created_at or datetime.now(timezone.utc)
         shelter.updated_at = shelter.updated_at or datetime.now(timezone.utc)
 
@@ -34,8 +37,14 @@ class FakeShelterSession:
 
     def scalars(self, statement):
         items = list(self.shelters.values())
-        if getattr(statement, "whereclause", None) is not None:
-            items = [item for item in items if item.status == ShelterStatus.ACTIVE]
+        whereclause = getattr(statement, "whereclause", None)
+        if whereclause is not None:
+            # Check if whereclause requires verified and active
+            clause_str = str(whereclause)
+            if "shelters.verified" in clause_str:
+                items = [item for item in items if getattr(item, "verified", False) and item.status == ShelterStatus.ACTIVE]
+            elif "shelters.status" in clause_str:
+                items = [item for item in items if item.status == ShelterStatus.ACTIVE]
         return _ScalarResult(items)
 
 
@@ -69,7 +78,7 @@ class ShelterTests(unittest.TestCase):
             updated_at=datetime.now(timezone.utc),
         )
 
-    def make_shelter(self, owner_id, status=ShelterStatus.ACTIVE, total_capacity=100, current_occupancy=25):
+    def make_shelter(self, owner_id, status=ShelterStatus.ACTIVE, total_capacity=100, current_occupancy=25, verified=True):
         return Shelter(
             id=uuid4(),
             name="School Shelter",
@@ -80,6 +89,7 @@ class ShelterTests(unittest.TestCase):
             total_capacity=total_capacity,
             current_occupancy=current_occupancy,
             status=status,
+            verified=verified,
             created_by_id=owner_id,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -87,6 +97,7 @@ class ShelterTests(unittest.TestCase):
 
     def authenticate_as(self, user):
         app.dependency_overrides[get_current_user] = lambda: user
+        app.dependency_overrides[get_optional_user] = lambda: user
 
     def test_authority_can_create_shelter(self):
         authority = self.make_user(ROLE_AUTHORITY)
@@ -225,9 +236,8 @@ class ShelterTests(unittest.TestCase):
         shelter_id = uuid4()
 
         self.assertEqual(self.client.post("/api/v1/shelters", json={}).status_code, 401)
-        self.assertEqual(self.client.get("/api/v1/shelters").status_code, 401)
-        self.assertEqual(self.client.get(f"/api/v1/shelters/{shelter_id}").status_code, 401)
         self.assertEqual(self.client.patch(f"/api/v1/shelters/{shelter_id}", json={}).status_code, 401)
+        self.assertEqual(self.client.delete(f"/api/v1/shelters/{shelter_id}").status_code, 401)
 
     def test_invalid_uuid_returns_422(self):
         authority = self.make_user(ROLE_AUTHORITY)

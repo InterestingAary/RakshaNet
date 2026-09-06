@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -10,11 +11,20 @@ from app.api.v1.disasters import router as disasters_router
 from app.api.v1.shelters import router as shelters_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.relocation import router as relocation_router
+from app.api.v1.hazards import router as hazards_router
 
 app = FastAPI(
     title=settings.app_name,
     description="Adaptive Emergency Evacuation & Relocation Intelligence System",
     version=settings.app_version,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router, prefix="/api/v1")
@@ -24,6 +34,7 @@ app.include_router(disasters_router, prefix="/api/v1")
 app.include_router(shelters_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(relocation_router, prefix="/api/v1")
+app.include_router(hazards_router, prefix="/api/v1")
 
 
 @app.get("/")
