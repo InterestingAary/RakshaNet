@@ -9,3 +9,4 @@ export type { ResponseTeam } from './response';
 export type { Alert } from './alert';
 export type { TimelineEvent } from './timeline';
 export type { AuthUser, LoginCredentials } from './auth';
+export type { ExposureHazardZone, ExposureResponse } from './exposure';

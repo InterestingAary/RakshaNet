@@ -9,9 +9,16 @@ interface ShelterCardProps {
   onSelect: (shelter: Shelter) => void;
   isSelected: boolean;
   distanceKm: number | null;
+  isRecommended?: boolean;
 }
 
-export function ShelterCard({ shelter, onSelect, isSelected, distanceKm }: ShelterCardProps) {
+export function ShelterCard({
+  shelter,
+  onSelect,
+  isSelected,
+  distanceKm,
+  isRecommended = false,
+}: ShelterCardProps) {
   const occupancyRate = (shelter.occupancy / shelter.totalCapacity) * 100;
   
   let statusColor = 'bg-green-500';
@@ -23,17 +30,33 @@ export function ShelterCard({ shelter, onSelect, isSelected, distanceKm }: Shelt
   return (
     <div 
       onClick={() => onSelect(shelter)}
-      className={`p-4 rounded-xl border transition-all cursor-pointer ${
-        isSelected 
+      className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
+        isRecommended
+          ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-500 ring-2 ring-emerald-500/20 shadow-md'
+          : isSelected 
           ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-500 shadow-sm' 
           : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700'
       }`}
     >
+      {isRecommended && (
+        <div className="mb-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+          <ShieldCheck className="w-3 h-3" />
+          <span>Recommended Nearest Shelter</span>
+        </div>
+      )}
+
       <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-1">
-            {shelter.name}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-1">
+              {shelter.name}
+            </h3>
+            {shelter.verified && (
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                Verified
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
             <MapPin className="w-3.5 h-3.5" />
             {distanceKm !== null ? (

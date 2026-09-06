@@ -16,21 +16,47 @@ import { ShelterDetailPanel } from '@/components/citizen/ShelterDetailPanel';
 import { EvacuationPanel } from '@/components/citizen/EvacuationPanel';
 import { NeedHelpFlow } from '@/components/citizen/NeedHelpFlow';
 import { IncidentReportForm } from '@/components/citizen/IncidentReportForm';
+import { ExposureBanner } from '@/components/citizen/ExposureBanner';
 import CitizenHeader from '@/components/citizen/CitizenHeader';
-import { AlertCircle, FileWarning } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Eye, EyeOff, FileWarning, Loader2, RefreshCw } from 'lucide-react';
 import { Shelter, LatLng } from '@/types';
+import { useHazards } from '@/hooks/useHazards';
+import { useCitizenExposure } from '@/hooks/useCitizenExposure';
 
 const EmergencyMap = dynamic(() => import('@/components/map/EmergencyMap'), { ssr: false });
 
 function CitizenPortalInner() {
-  const { hazardZones, shelters, incidents, activeDisaster } = useDisaster();
+  const { shelters, incidents, activeDisaster } = useDisaster();
+  const {
+    hazards,
+    isLoading: isLoadingHazards,
+    error: hazardError,
+    isEmpty: isHazardsEmpty,
+    showHazards,
+    toggleHazards,
+    refresh: refreshHazards,
+  } = useHazards({ disasterId: activeDisaster?.id });
   const { route, isLoadingRoute, requestRoute, refreshRoute, clearRoute } = useRoute();
-  const { location, setManualLocation } = useLocation();
+  const { location, setManualLocation, permissionStatus } = useLocation();
+
+  const {
+    exposure,
+    recommendedShelter,
+    recommendedDistanceKm,
+    isLoading: isLoadingExposure,
+    error: exposureError,
+    isLocationDenied,
+    refresh: refreshExposure,
+  } = useCitizenExposure({
+    location,
+    permissionStatus,
+  });
 
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [showLocationBanner, setShowLocationBanner] = useState(!location);
+
 
   useEffect(() => {
     if (location) setShowLocationBanner(false);
@@ -62,9 +88,7 @@ function CitizenPortalInner() {
   };
 
   const handleMapClick = (latlng: LatLng) => {
-    if (!location) {
-      setManualLocation(latlng as any);
-    }
+    setManualLocation(latlng as any);
   };
 
   const distanceTo = (target: LatLng) => {
@@ -111,6 +135,21 @@ function CitizenPortalInner() {
               </button>
             </div>
 
+            {/* Citizen Spatial Exposure & Nearest Verified Shelter Banner */}
+            <ExposureBanner
+              exposure={exposure}
+              recommendedShelter={recommendedShelter}
+              recommendedDistanceKm={recommendedDistanceKm}
+              isLoading={isLoadingExposure}
+              error={exposureError}
+              isLocationDenied={isLocationDenied}
+              hasLocation={Boolean(location)}
+              onSelectShelter={handleShelterSelect}
+              onRequestRoute={handleRequestRoute}
+              onRefresh={refreshExposure}
+              onPromptLocation={handleGrantPermission}
+            />
+
             <AlertsPanel />
             
             <EvacuationPanel 
@@ -121,21 +160,31 @@ function CitizenPortalInner() {
             />
 
             <div className="space-y-3">
-              <h2 className="font-bold text-lg text-slate-900 dark:text-white sticky top-0 bg-slate-50 dark:bg-slate-900 py-2 z-10">
-                Safe Shelters
-              </h2>
+              <div className="flex items-center justify-between sticky top-0 bg-slate-50 dark:bg-slate-900 py-2 z-10">
+                <h2 className="font-bold text-lg text-slate-900 dark:text-white">
+                  Safe Shelters
+                </h2>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {shelters.length} verified
+                </span>
+              </div>
               {shelters.map(shelter => (
                 <ShelterCard 
                   key={shelter.id}
                   shelter={shelter}
                   onSelect={handleShelterSelect}
                   isSelected={selectedShelter?.id === shelter.id}
-                  distanceKm={distanceTo(shelter.location)}
+                  isRecommended={recommendedShelter?.id === shelter.id}
+                  distanceKm={
+                    recommendedShelter?.id === shelter.id && recommendedDistanceKm !== null
+                      ? recommendedDistanceKm
+                      : distanceTo(shelter.location)
+                  }
                 />
               ))}
               {shelters.length === 0 && (
                 <div className="text-center p-6 text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  No active shelters found nearby.
+                  No active verified shelters found nearby.
                 </div>
               )}
             </div>
@@ -145,8 +194,10 @@ function CitizenPortalInner() {
         {/* Map Area */}
         <div className="flex-1 relative z-0">
           <EmergencyMap 
-            hazardZones={hazardZones}
+            hazardZones={hazards}
+            showHazards={showHazards}
             shelters={shelters}
+            recommendedShelterId={recommendedShelter?.id}
             incidents={incidents}
             routes={route ? [route] : []}
             userLocation={location as any}
@@ -154,6 +205,63 @@ function CitizenPortalInner() {
             onMapClick={handleMapClick}
             height="100%"
           />
+
+          {/* Hazard Layer Controls & Status Overlay */}
+          <div className="absolute top-4 right-4 z-[400] flex flex-col items-end gap-2">
+            <button
+              onClick={toggleHazards}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold shadow-md transition-all ${
+                showHazards
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={showHazards ? 'Hide Hazard Zones' : 'Show Hazard Zones'}
+            >
+              <AlertTriangle className="w-4 h-4" />
+              <span>Hazards</span>
+              {hazards.length > 0 && (
+                <span
+                  className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+                    showHazards
+                      ? 'bg-red-800 text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                  }`}
+                >
+                  {hazards.length}
+                </span>
+              )}
+              {showHazards ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Loading Indicator */}
+            {isLoadingHazards && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/85 backdrop-blur text-white text-xs rounded-md shadow-md">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                <span>Loading hazard zones...</span>
+              </div>
+            )}
+
+            {/* Error Indicator with Retry */}
+            {hazardError && !isLoadingHazards && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-600/90 backdrop-blur text-white text-xs rounded-md shadow-lg">
+                <span>Failed to refresh live zones</span>
+                <button
+                  onClick={() => refreshHazards()}
+                  className="underline font-bold hover:text-amber-100 flex items-center gap-1 ml-1"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry
+                </button>
+              </div>
+            )}
+
+            {/* Empty State Indicator */}
+            {showHazards && isHazardsEmpty && !isLoadingHazards && !hazardError && (
+              <div className="px-3 py-1.5 bg-slate-800/85 backdrop-blur text-slate-200 text-xs rounded-md shadow">
+                No active hazard zones verified in this area.
+              </div>
+            )}
+          </div>
+
 
           {/* Mobile Overlay Actions */}
           <div className="md:hidden absolute top-4 left-4 right-4 flex gap-2 z-[400]">

@@ -57,6 +57,7 @@ export interface MapProps {
   onMapClick?: (latlng: LatLng) => void;
   selectedLocation?: LatLng | null;
   userLocation?: LatLng | null;
+  recommendedShelterId?: string;
   children?: React.ReactNode;
 }
 
@@ -98,6 +99,7 @@ export default function EmergencyMap({
   onMapClick,
   selectedLocation,
   userLocation,
+  recommendedShelterId,
   children,
 }: MapProps) {
   useEffect(() => {
@@ -123,7 +125,11 @@ export default function EmergencyMap({
       {showHazards && <HazardLayer zones={hazardZones} />}
 
       {showShelters && (
-        <ShelterLayer shelters={shelters} onShelterClick={onShelterClick} />
+        <ShelterLayer
+          shelters={shelters}
+          onShelterClick={onShelterClick}
+          recommendedShelterId={recommendedShelterId}
+        />
       )}
 
       {showIncidents && (

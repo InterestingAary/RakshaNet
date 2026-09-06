@@ -80,7 +80,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
     setError(null);
 
     try {
-      const disaster = await disasterService.getActiveDisaster();
+      const disaster = await disasterService.getActiveDisaster().catch(() => null);
       const disasterId = disaster?.id || "evt-001";
       const [
         zones,
@@ -91,13 +91,13 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
         cases,
         teams,
       ] = await Promise.all([
-        disasterService.getHazardZones(disasterId),
-        alertService.getAlerts(disasterId),
-        disasterService.getTimeline(disasterId),
-        shelterService.getShelters(),
-        incidentService.getIncidents(),
-        disasterService.getPriorityCases(),
-        disasterService.getResponseTeams(),
+        disasterService.getHazardZones(disasterId).catch(() => []),
+        alertService.getAlerts(disasterId).catch(() => []),
+        disasterService.getTimeline(disasterId).catch(() => []),
+        shelterService.getShelters().catch(() => []),
+        incidentService.getIncidents().catch(() => []),
+        disasterService.getPriorityCases().catch(() => []),
+        disasterService.getResponseTeams().catch(() => []),
       ]);
 
       if (!mountedRef.current) return;
