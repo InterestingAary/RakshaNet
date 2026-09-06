@@ -14,6 +14,8 @@ import EventTimeline from '@/components/authority/EventTimeline';
 import CreateEventForm from '@/components/authority/CreateEventForm';
 import DemoController from '@/components/authority/DemoController';
 import { blockedRoadService } from '@/services/blockedRoadService';
+import { shelterService } from '@/services/shelterService';
+import { incidentService } from '@/services/incidentService';
 
 import { useDisasterContext } from '@/context/DisasterContext';
 import { useDemo } from '@/context/DemoContext';
@@ -37,7 +39,9 @@ export default function AuthorityDashboardPage() {
     responseTeams,
     timeline,
     blockedRoads,
-    updateBlockedRoad
+    updateBlockedRoad,
+    updateShelter,
+    updateIncident,
   } = useDisasterContext();
 
   const handleUpdateShelter = async (shelter: any) => {

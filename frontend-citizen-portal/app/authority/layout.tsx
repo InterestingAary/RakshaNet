@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { DisasterProvider } from '@/context/DisasterContext';
+import { DemoProvider } from '@/context/DemoContext';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -34,11 +35,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 export default function AuthorityLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DisasterProvider>
-        <AuthGuard>
-          {children}
-        </AuthGuard>
-      </DisasterProvider>
+      <DemoProvider>
+        <DisasterProvider>
+          <AuthGuard>
+            {children}
+          </AuthGuard>
+        </DisasterProvider>
+      </DemoProvider>
     </AuthProvider>
   );
 }
+
