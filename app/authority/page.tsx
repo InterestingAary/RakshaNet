@@ -7,10 +7,12 @@ import DashboardMetrics from '@/components/authority/DashboardMetrics';
 import ShelterManagement from '@/components/authority/ShelterManagement';
 import PriorityCaseTable from '@/components/authority/PriorityCaseTable';
 import IncidentManagement from '@/components/authority/IncidentManagement';
+import BlockedRoadManagement from '@/components/authority/BlockedRoadManagement';
 import ResponseTeamPanel from '@/components/authority/ResponseTeamPanel';
 import EventTimeline from '@/components/authority/EventTimeline';
 import CreateEventForm from '@/components/authority/CreateEventForm';
 import DemoController from '@/components/authority/DemoController';
+import { blockedRoadService } from '@/services/blockedRoadService';
 
 import { useDisasterContext } from '@/context/DisasterContext';
 import { useDemo } from '@/context/DemoContext';
@@ -18,7 +20,7 @@ import { Plus } from 'lucide-react';
 
 const EmergencyMap = dynamic(() => import('@/components/map/EmergencyMap'), { ssr: false });
 
-type TabType = 'overview' | 'shelters' | 'priority' | 'incidents' | 'teams' | 'timeline';
+type TabType = 'overview' | 'shelters' | 'priority' | 'incidents' | 'blocked_roads' | 'teams' | 'timeline';
 
 export default function AuthorityDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -32,23 +34,55 @@ export default function AuthorityDashboardPage() {
     priorityCases,
     responseTeams,
     timeline,
-    // Methods for context would typically be exposed, assuming placeholders if not
+    blockedRoads,
+    updateBlockedRoad
   } = useDisasterContext();
 
-  const handleUpdateShelter = (shelter: any) => {
-    // console.log('Update shelter', shelter);
+  const handleUpdateShelter = async (shelter: any) => {
+    try {
+      // Assuming shelter is of type Shelter
+      const updated = await shelterService.updateShelter(shelter.id, shelter);
+      // Wait, updateShelter isn't imported from context. Let's get it.
+      // Ah, updateShelter is already extracted from useDisasterContext above!
+      updateShelter(updated);
+    } catch (err) {
+      console.error('Failed to update shelter', err);
+    }
   };
 
   const handleAssignTeam = async (targetId: string, teamId: string) => {
     // console.log('Assign team', targetId, teamId);
   };
 
-  const handleUpdateIncidentStatus = (id: string, status: any) => {
-    // console.log('Update incident', id, status);
+  const handleUpdateIncidentStatus = async (id: string, status: any) => {
+    try {
+      const updated = await incidentService.updateIncidentStatus(id, status);
+      updateIncident(updated);
+    } catch (err) {
+      console.error('Failed to update incident status', err);
+    }
   };
 
   const handleCreateEvent = (eventData: any) => {
     // console.log('Create event', eventData);
+  };
+
+  const handleVerifyBlockedRoad = async (id: string, notes?: string) => {
+    try {
+      const updated = await blockedRoadService.verifyBlockedRoad(id, notes);
+      updateBlockedRoad(updated);
+    } catch (err) {
+      console.error('Failed to verify blocked road', err);
+    }
+  };
+
+  const handleClearBlockedRoad = async (id: string, notes?: string) => {
+    try {
+      const updated = await blockedRoadService.clearBlockedRoad(id, notes);
+      updateBlockedRoad(updated);
+    } catch (err) {
+      console.error('Failed to clear blocked road', err);
+    }
   };
 
   return (
@@ -73,6 +107,7 @@ export default function AuthorityDashboardPage() {
               { id: 'shelters', label: 'Shelters' },
               { id: 'priority', label: 'Priority Cases' },
               { id: 'incidents', label: 'Incidents' },
+              { id: 'blocked_roads', label: 'Blocked Roads' },
               { id: 'teams', label: 'Teams' },
               { id: 'timeline', label: 'Timeline' }
             ].map(tab => (
@@ -133,6 +168,14 @@ export default function AuthorityDashboardPage() {
                 teams={responseTeams || []}
                 onUpdateStatus={handleUpdateIncidentStatus}
                 onAssignTeam={handleAssignTeam}
+              />
+            )}
+
+            {activeTab === 'blocked_roads' && (
+              <BlockedRoadManagement 
+                blockedRoads={blockedRoads || []} 
+                onVerify={handleVerifyBlockedRoad}
+                onClear={handleClearBlockedRoad}
               />
             )}
             
