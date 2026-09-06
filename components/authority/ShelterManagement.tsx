@@ -20,10 +20,13 @@ export default function ShelterManagement({ shelters, onUpdate }: ShelterManagem
   }
 
   const handleToggleStatus = (shelter: Shelter) => {
-    onUpdate({
-      ...shelter,
-      status: shelter.status === 'active' ? 'full' : 'active' // Simplified toggle for UI
-    });
+    if (shelter.occupancy >= shelter.totalCapacity) {
+      // It's full, so "Set Active" means freeing up space (or just making it active if inactive)
+      onUpdate({ ...shelter, occupancy: Math.max(0, shelter.totalCapacity - 10), status: 'active' });
+    } else {
+      // It's not full, so "Mark Full" means maximizing occupancy
+      onUpdate({ ...shelter, occupancy: shelter.totalCapacity });
+    }
   };
 
   return (
@@ -57,12 +60,12 @@ export default function ShelterManagement({ shelters, onUpdate }: ShelterManagem
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    shelter.occupancy >= shelter.totalCapacity ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                     shelter.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                    shelter.status === 'full' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                     'bg-slate-500/10 text-slate-400 border border-slate-500/20'
                   }`}>
-                    {shelter.status === 'active' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                    <span className="capitalize">{shelter.status}</span>
+                    {shelter.occupancy >= shelter.totalCapacity ? <XCircle className="w-3 h-3" /> : (shelter.status === 'active' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />)}
+                    <span className="capitalize">{shelter.occupancy >= shelter.totalCapacity ? 'full' : shelter.status}</span>
                   </span>
                 </td>
                 <td className="px-4 py-3 min-w-[200px]">
@@ -87,7 +90,7 @@ export default function ShelterManagement({ shelters, onUpdate }: ShelterManagem
                     onClick={() => handleToggleStatus(shelter)}
                     className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                   >
-                    {shelter.status === 'active' ? 'Mark Full' : 'Set Active'}
+                    {shelter.occupancy >= shelter.totalCapacity ? 'Free Up Space' : 'Mark Full'}
                   </button>
                 </td>
               </tr>

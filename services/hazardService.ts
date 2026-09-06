@@ -83,9 +83,10 @@ export const hazardService = {
    * Fetch verified hazard zones for citizen map view.
    * Falls back to demo mock data if demo mode is enabled or API fails in development.
    */
-  async getVerifiedHazards(disasterId?: string): Promise<HazardZone[]> {
+  async getVerifiedHazards(disasterEventId?: string): Promise<HazardZone[]> {
     try {
-      const query = disasterId ? `?disaster_id=${encodeURIComponent(disasterId)}` : '';
+      const isMockId = disasterEventId === 'evt-001';
+      const query = (disasterEventId && !isMockId) ? `?disaster_id=${encodeURIComponent(disasterEventId)}` : '';
       const response = await apiClient.get<BackendHazardZoneResponse[]>(`/api/v1/hazards${query}`);
 
       if (Array.isArray(response) && response.length > 0) {

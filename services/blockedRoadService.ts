@@ -52,7 +52,8 @@ export const blockedRoadService = {
    */
   async getVerifiedBlockedRoads(disasterId?: string): Promise<BlockedRoad[]> {
     try {
-      const query = disasterId
+      const isMockId = disasterId === 'evt-001';
+      const query = (disasterId && !isMockId)
         ? `?disaster_id=${encodeURIComponent(disasterId)}`
         : '';
       const response = await apiClient.get<BlockedRoad[]>(
@@ -73,6 +74,38 @@ export const blockedRoadService = {
         return [];
       }
 
+      return [];
+    } catch (err) {
+      const isDemo =
+        typeof process !== 'undefined' &&
+        process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      if (isDemo) {
+        return MOCK_BLOCKED_ROADS;
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Fetch all blocked roads for authority dashboard view.
+   * Requires authority authentication.
+   */
+  async getAllBlockedRoads(disasterId?: string, status?: string): Promise<BlockedRoad[]> {
+    try {
+      const params = new URLSearchParams();
+      const isMockId = disasterId === 'evt-001';
+      if (disasterId && !isMockId) params.append('disaster_id', disasterId);
+      if (status) params.append('status', status);
+      
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const response = await apiClient.get<BlockedRoad[]>(
+        `/api/v1/blocked-roads${query}`,
+        { headers: authService.getAuthHeaders() }
+      );
+      
+      if (Array.isArray(response)) {
+        return response;
+      }
       return [];
     } catch (err) {
       const isDemo =

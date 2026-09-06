@@ -23,6 +23,8 @@ import { disasterService } from '@/services/disasterService';
 import { shelterService } from '@/services/shelterService';
 import { alertService } from '@/services/alertService';
 import { incidentService } from '@/services/incidentService';
+import { blockedRoadService } from '@/services/blockedRoadService';
+import { BlockedRoad } from '@/types/blockedRoad';
 
 // ---------------------------------------------------------------------------
 // Context type
@@ -35,6 +37,7 @@ interface DisasterContextValue {
   timeline: TimelineEvent[];
   shelters: Shelter[];
   incidents: IncidentReport[];
+  blockedRoads: BlockedRoad[];
   priorityCases: PriorityCase[];
   responseTeams: ResponseTeam[];
   isLoading: boolean;
@@ -42,8 +45,10 @@ interface DisasterContextValue {
   refresh: () => Promise<void>;
   updateShelter: (shelter: Shelter) => void;
   updateIncident: (incident: IncidentReport) => void;
+  updateBlockedRoad: (blockedRoad: BlockedRoad) => void;
   addTimelineEvent: (event: TimelineEvent) => void;
   addIncident: (incident: IncidentReport) => void;
+  addBlockedRoad: (blockedRoad: BlockedRoad) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +74,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
       const [shelters, setShelters] = useState<Shelter[]>([]);
       const [incidents, setIncidents] = useState<IncidentReport[]>([]);
+      const [blockedRoads, setBlockedRoads] = useState<BlockedRoad[]>([]);
       const [priorityCases, setPriorityCases] = useState<PriorityCase[]>([]);
       const [responseTeams, setResponseTeams] = useState<ResponseTeam[]>([]);
       const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +94,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
         fetchedTimeline,
         fetchedShelters,
         fetchedIncidents,
+        fetchedBlockedRoads,
         cases,
         teams,
       ] = await Promise.all([
@@ -96,6 +103,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
         disasterService.getTimeline(disasterId).catch(() => []),
         shelterService.getShelters().catch(() => []),
         incidentService.getIncidents().catch(() => []),
+        blockedRoadService.getAllBlockedRoads(disasterId).catch(() => []),
         disasterService.getPriorityCases().catch(() => []),
         disasterService.getResponseTeams().catch(() => []),
       ]);
@@ -108,6 +116,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       setTimeline(fetchedTimeline);
       setShelters(fetchedShelters);
       setIncidents(fetchedIncidents);
+      setBlockedRoads(fetchedBlockedRoads);
       setPriorityCases(cases);
       setResponseTeams(teams);
     } catch (err) {
@@ -145,12 +154,22 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
     );
   }, []);
 
+  const updateBlockedRoad = useCallback((updated: BlockedRoad) => {
+    setBlockedRoads((prev) =>
+      prev.map((b) => (b.id === updated.id ? updated : b))
+    );
+  }, []);
+
   const addTimelineEvent = useCallback((event: TimelineEvent) => {
     setTimeline((prev) => [event, ...prev]);
   }, []);
 
   const addIncident = useCallback((incident: IncidentReport) => {
     setIncidents((prev) => [incident, ...prev]);
+  }, []);
+
+  const addBlockedRoad = useCallback((blockedRoad: BlockedRoad) => {
+    setBlockedRoads((prev) => [blockedRoad, ...prev]);
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -165,6 +184,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       timeline,
       shelters,
       incidents,
+      blockedRoads,
       priorityCases,
       responseTeams,
       isLoading,
@@ -172,8 +192,10 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       refresh: load,
       updateShelter,
       updateIncident,
+      updateBlockedRoad,
       addTimelineEvent,
       addIncident,
+      addBlockedRoad,
     }),
     [
       activeDisaster,
@@ -182,6 +204,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       timeline,
       shelters,
       incidents,
+      blockedRoads,
       priorityCases,
       responseTeams,
       isLoading,
@@ -189,8 +212,10 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
       load,
       updateShelter,
       updateIncident,
+      updateBlockedRoad,
       addTimelineEvent,
       addIncident,
+      addBlockedRoad,
     ]
   );
 
