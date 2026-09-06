@@ -113,6 +113,21 @@ def evaluate_shelter_risk(db: Session, shelter: Shelter, latitude: float, longit
             risk_score += report_score
             risk_flags.append(flag)
 
+    from app.models.blocked_road import BlockedRoad, BlockedRoadStatus
+    blocked_roads = list(db.scalars(
+        select(BlockedRoad).where(
+            BlockedRoad.verified.is_(True),
+            BlockedRoad.status == BlockedRoadStatus.VERIFIED.value
+        )
+    ).all())
+    
+    for road in blocked_roads:
+        # Penalize shelters that are very close to a verified blocked road (e.g. 500m)
+        dist_km = haversine_km(shelter.latitude, shelter.longitude, road.latitude, road.longitude)
+        if dist_km < 0.5:
+            risk_score += 10
+            risk_flags.append("BLOCKED_ROAD_DETECTED")
+
     deduped = []
     for flag in risk_flags:
         if flag not in deduped:
