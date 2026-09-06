@@ -10,3 +10,11 @@ export type { Alert } from './alert';
 export type { TimelineEvent } from './timeline';
 export type { AuthUser, LoginCredentials } from './auth';
 export type { ExposureHazardZone, ExposureResponse } from './exposure';
+export type {
+  BlockageType,
+  BlockageSeverity,
+  BlockedRoadStatus,
+  BlockedRoad,
+  BlockedRoadReportInput,
+  BlockedRoadAuditLog,
+} from './blockedRoad';
