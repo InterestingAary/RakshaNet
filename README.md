@@ -159,3 +159,12 @@ All original feature and team branches are retained as backups:
 - `frontend-government-portal` (commit `30705d0`)
 - `Maps-&-routes` (commit `46e4656`)
 - `ai-decision-support` (commit `3c516f4`)
+
+---
+
+## Team & Contributors (GridMinds — SIH 2026)
+
+- **Lead & Primary Architect:** Aryan Mittal ([@InterestingAary](https://github.com/InterestingAary))
+- **Team Contributors:**
+  - Sourajit Balabantaray ([@Sourajit-balabantaray](https://github.com/Sourajit-balabantaray)) — Backend & Routing Modules
+  - GridMinds SIH Team Members — UI/UX, Maps, Decision Support & Research
