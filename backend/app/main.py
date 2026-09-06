@@ -13,6 +13,7 @@ from app.api.v1.reports import router as reports_router
 from app.api.v1.relocation import router as relocation_router
 from app.api.v1.hazards import router as hazards_router
 from app.api.v1.blocked_roads import router as blocked_roads_router
+from app.api.v1.ai import router as ai_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -37,6 +38,8 @@ app.include_router(reports_router, prefix="/api/v1")
 app.include_router(relocation_router, prefix="/api/v1")
 app.include_router(hazards_router, prefix="/api/v1")
 app.include_router(blocked_roads_router, prefix="/api/v1")
+app.include_router(ai_router, prefix="/api/v1")
+app.include_router(ai_router)
 
 
 @app.get("/")

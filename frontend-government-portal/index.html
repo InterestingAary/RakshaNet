@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OMNITRIAGE | Emergency Command Center</title>
+    <meta
+      name="description"
+      content="Government emergency command dashboard for adaptive evacuation and relocation intelligence."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="loginView" class="login-screen">
+      <div class="login-panel">
+        <div class="brand-mark" aria-label="OMNITRIAGE logo">
+          <span class="brand-icon">◧</span>
+          <div>
+            <div class="brand-name">OMNITRIAGE</div>
+            <div class="brand-subtitle">Vijayawada Emergency Evacuation &amp; Relocation Intelligence System</div>
+          </div>
+        </div>
+
+        <div class="login-header">
+          <h1>VIJAYAWADA EMERGENCY COMMAND CENTER</h1>
+          <p>District Response Coordination | Krishna Riverfront Zone</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+          <label>
+            Authority ID
+            <input type="text" value="AUTH-3301" aria-label="Authority ID" />
+          </label>
+
+          <label>
+            Password
+            <input type="password" value="********" aria-label="Password" />
+          </label>
+
+          <label>
+            Department / Authority
+            <select aria-label="Department or authority selector">
+              <option>National Disaster Management Authority</option>
+              <option>District Emergency Operations Cell</option>
+              <option>Flood Control &amp; Relief Unit</option>
+              <option>Urban Search &amp; Rescue</option>
+            </select>
+          </label>
+
+          <label class="remember-row" aria-label="Remember session">
+            <input type="checkbox" checked />
+            <span>Remember session</span>
+          </label>
+
+          <button type="submit" class="primary-button">LOGIN</button>
+          <button type="button" class="secondary-button" id="demoModeBtn">DEMO MODE</button>
+        </form>
+
+        <p class="security-note">Authorized personnel only. Emergency operational data is restricted.</p>
+      </div>
+    </div>
+
+    <div id="appView" class="app-shell hidden">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand-block">
+          <div class="brand-mark small">
+            <span class="brand-icon">◧</span>
+          </div>
+          <div>
+            <div class="brand-name">OMNITRIAGE</div>
+            <div class="brand-subtitle small">Vijayawada Emergency Ops</div>
+          </div>
+        </div>
+
+        <nav id="sidebarNav" class="sidebar-nav" aria-label="Sidebar navigation"></nav>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar" aria-label="Command header">
+          <div class="status-bundle">
+            <div class="live-pulse"></div>
+            <div>
+              <div class="micro-label">CURRENT ACTIVE EMERGENCY</div>
+              <div id="activeEventHeader" class="active-event-name">FLOOD EVENT — VIJAYAWADA</div>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <div class="status-pill alert">● SYSTEM ONLINE</div>
+            <div class="status-pill warning">● FLOOD EVENT ACTIVE</div>
+            <button class="icon-btn" aria-label="Notifications">🔔</button>
+            <div class="officer-box">
+              <span class="micro-label">OFFICER</span>
+              <strong id="officerName">Lt. A. Mehta</strong>
+            </div>
+            <button class="profile-btn" aria-label="Profile menu">Profile ▾</button>
+            <div class="clock-box" id="systemClock">21:14</div>
+          </div>
+        </header>
+
+        <main id="pageContent" class="page-content" aria-live="polite"></main>
+      </div>
+    </div>
+
+    <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-card">
+        <h3 id="modalTitle">Confirm action</h3>
+        <p id="modalMessage">This action will update active emergency operations.</p>
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" id="cancelActionBtn">Cancel</button>
+          <button type="button" class="primary-button" id="confirmActionBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="detailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <div class="modal-card detail-modal-card">
+        <div class="detail-header">
+          <h3 id="detailTitle">Detail</h3>
+          <button type="button" class="icon-btn" id="closeDetailBtn" aria-label="Close detail">✕</button>
+        </div>
+        <div id="detailBody"></div>
+      </div>
+    </div>
+
+    <div id="notificationPanel" class="notification-panel hidden" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

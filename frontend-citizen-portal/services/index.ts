@@ -8,3 +8,5 @@ export * from './routingService';
 export * from './shelterService';
 export * from './hazardService';
 export * from './blockedRoadService';
+export * from './aiService';
+

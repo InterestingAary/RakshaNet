@@ -11,8 +11,9 @@ from app.models.disaster import Disaster, DisasterStatus
 from app.models.shelter import Shelter, ShelterStatus
 from app.models.user import User
 from app.schemas.replanning import ReplanningRecommendation
-from app.schemas.relocation import RelocationRecommendation, RelocationRequest
+from app.schemas.relocation import RelocationRecommendation, RelocationRequest, RouteCalculationRequest, RouteCalculationResponse
 from app.services.replanning import build_relocation_recommendation
+from app.services.routing_engine import calculate_safe_route
 
 router = APIRouter(prefix="/relocation", tags=["relocation"])
 
@@ -114,3 +115,13 @@ def refresh_relocation_recommendation(
         ) from exc
 
     return recommendation
+
+
+@router.post("/route", response_model=RouteCalculationResponse)
+def calculate_evacuation_route(
+    request_data: RouteCalculationRequest,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RouteCalculationResponse:
+    return calculate_safe_route(db, request_data)
+

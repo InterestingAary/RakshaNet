@@ -8,6 +8,7 @@ import ShelterManagement from '@/components/authority/ShelterManagement';
 import PriorityCaseTable from '@/components/authority/PriorityCaseTable';
 import IncidentManagement from '@/components/authority/IncidentManagement';
 import BlockedRoadManagement from '@/components/authority/BlockedRoadManagement';
+import { AIDecisionSupportPanel } from '@/components/authority/AIDecisionSupportPanel';
 import ResponseTeamPanel from '@/components/authority/ResponseTeamPanel';
 import EventTimeline from '@/components/authority/EventTimeline';
 import CreateEventForm from '@/components/authority/CreateEventForm';
@@ -20,7 +21,8 @@ import { Plus } from 'lucide-react';
 
 const EmergencyMap = dynamic(() => import('@/components/map/EmergencyMap'), { ssr: false });
 
-type TabType = 'overview' | 'shelters' | 'priority' | 'incidents' | 'blocked_roads' | 'teams' | 'timeline';
+type TabType = 'overview' | 'shelters' | 'priority' | 'incidents' | 'blocked_roads' | 'ai_decision' | 'teams' | 'timeline';
+
 
 export default function AuthorityDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -108,6 +110,7 @@ export default function AuthorityDashboardPage() {
               { id: 'priority', label: 'Priority Cases' },
               { id: 'incidents', label: 'Incidents' },
               { id: 'blocked_roads', label: 'Blocked Roads' },
+              { id: 'ai_decision', label: 'AI Advisory' },
               { id: 'teams', label: 'Teams' },
               { id: 'timeline', label: 'Timeline' }
             ].map(tab => (
@@ -165,7 +168,7 @@ export default function AuthorityDashboardPage() {
             {activeTab === 'incidents' && (
               <IncidentManagement 
                 incidents={incidents || []} 
-                teams={responseTeams || []}
+                teams={responseTeams || []} 
                 onUpdateStatus={handleUpdateIncidentStatus}
                 onAssignTeam={handleAssignTeam}
               />
@@ -177,6 +180,10 @@ export default function AuthorityDashboardPage() {
                 onVerify={handleVerifyBlockedRoad}
                 onClear={handleClearBlockedRoad}
               />
+            )}
+
+            {activeTab === 'ai_decision' && (
+              <AIDecisionSupportPanel />
             )}
             
             {activeTab === 'teams' && (

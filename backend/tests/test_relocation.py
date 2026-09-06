@@ -223,3 +223,30 @@ class RelocationTests(unittest.TestCase):
         validated = RelocationRecommendation.model_validate(response.json())
         self.assertEqual(validated.shelter_name, "Contract Shelter")
         self.assertEqual(validated.available_capacity, 20)
+
+    def test_route_calculation_with_avoidance(self):
+        citizen = self.make_user()
+        self.authenticate_as(citizen)
+        shelter = self.make_shelter(citizen.id, latitude=20.05, longitude=85.05)
+        self.session = FakeRelocationSession([shelter])
+        app.dependency_overrides[get_db] = lambda: self.session
+
+        response = self.client.post(
+            "/api/v1/relocation/route",
+            json={
+                "origin_latitude": 20.0,
+                "origin_longitude": 85.0,
+                "destination_latitude": 20.05,
+                "destination_longitude": 85.05,
+                "avoid_hazards": True,
+                "avoid_blocked_roads": True,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "SUCCESS")
+        self.assertGreater(data["distance_km"], 0)
+        self.assertIn("geometry", data)
+        self.assertEqual(data["geometry"]["type"], "LineString")
+        self.assertGreaterEqual(len(data["geometry"]["coordinates"]), 2)
+

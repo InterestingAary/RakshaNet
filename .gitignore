@@ -1,4 +1,6 @@
+# Python / Backend
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 .env
@@ -6,6 +8,20 @@ __pycache__/
 !.env.example
 .pytest_cache/
 .mypy_cache/
+*.log
+
+# Node / Next.js / Frontend
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE / OS
 .vscode/
 .idea/
-*.log
+.DS_Store
+Thumbs.db
