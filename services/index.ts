@@ -6,3 +6,4 @@ export * from './priorityService';
 export * from './responseTeamService';
 export * from './routingService';
 export * from './shelterService';
+export * from './hazardService';

@@ -21,6 +21,9 @@ export interface Shelter {
   activatedAt: Date | null;
   updatedAt: Date;
   facilities: string[];
+  verified?: boolean;
+  distance_meters?: number;
+  distance_km?: number;
 }
 
 export interface ShelterCapacity {
@@ -32,4 +35,13 @@ export interface ShelterCapacity {
   effectiveAvailableCapacity: number;
   utilizationPercent: number;
   updatedAt: Date;
+}
+
+export interface ShelterRecommendationResponse {
+  recommended_shelter: Shelter | null;
+  distance_meters: number | null;
+  distance_km: number | null;
+  available_capacity: number | null;
+  citizen_location: LatLng;
+  available_shelters: Shelter[];
 }

@@ -15,13 +15,25 @@ export interface DisasterEvent {
   updatedAt: Date;
 }
 
+export interface GeoJSONMultiPolygon {
+  type: 'MultiPolygon';
+  coordinates: number[][][][]; // [ [ [ [lon, lat], ... ] ] ]
+}
+
 export interface HazardZone {
   id: string;
-  disasterEventId: string;
+  disasterEventId?: string;
+  disaster_id?: string;
   name: string;
-  severity: Severity;
-  polygon: LatLng[];
-  type: 'flood' | 'fire' | 'structural' | 'chemical';
-  description: string;
-  updatedAt: Date;
+  severity: Severity | number;
+  polygon?: LatLng[];
+  geometry?: GeoJSONMultiPolygon;
+  type?: 'flood' | 'fire' | 'structural' | 'chemical' | string;
+  description?: string;
+  source?: string;
+  verified?: boolean;
+  updatedAt?: Date;
+  created_at?: string;
+  updated_at?: string;
 }
+

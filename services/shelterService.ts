@@ -1,8 +1,14 @@
 import { apiClient } from '@/lib/apiClient';
 import { authService } from '@/services/authService';
-import type { Shelter, ShelterCapacity } from '@/types';
+import { MOCK_SHELTERS } from '@/mock/shelterData';
+import type {
+  Shelter,
+  ShelterCapacity,
+  ShelterRecommendationResponse,
+  LatLng,
+} from '@/types';
 
-interface BackendShelter {
+export interface BackendShelter {
   id: string;
   name: string;
   description: string;
@@ -13,9 +19,24 @@ interface BackendShelter {
   current_occupancy: number;
   available_capacity: number;
   status: 'ACTIVE' | 'INACTIVE';
+  verified: boolean;
+  distance_meters?: number;
+  distance_km?: number;
   created_by_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BackendShelterRecommendationResponse {
+  recommended_shelter: BackendShelter | null;
+  distance_meters: number | null;
+  distance_km: number | null;
+  available_capacity: number | null;
+  citizen_location: {
+    latitude: number;
+    longitude: number;
+  };
+  available_shelters: BackendShelter[];
 }
 
 function mapShelter(shelter: BackendShelter): Shelter {
@@ -40,6 +61,9 @@ function mapShelter(shelter: BackendShelter): Shelter {
     activatedAt: null,
     updatedAt: new Date(shelter.updated_at),
     facilities: [],
+    verified: shelter.verified ?? true,
+    distance_meters: shelter.distance_meters,
+    distance_km: shelter.distance_km,
   };
 }
 
@@ -77,9 +101,64 @@ function mapUpdatePayload(data: Partial<Shelter>) {
 const requestOptions = () => ({ headers: authService.getAuthHeaders() });
 
 export const shelterService = {
+  /**
+   * Public list of verified and active shelters.
+   */
   async getShelters(): Promise<Shelter[]> {
-    const shelters = await apiClient.get<BackendShelter[]>('/api/v1/shelters', requestOptions());
-    return shelters.map(mapShelter);
+    try {
+      const shelters = await apiClient.get<BackendShelter[]>('/api/v1/shelters');
+      if (Array.isArray(shelters) && shelters.length > 0) {
+        return shelters.map(mapShelter);
+      }
+      const isDemo = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      if (isDemo) {
+        return MOCK_SHELTERS;
+      }
+      return [];
+    } catch (err) {
+      const isDemo = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      if (isDemo) {
+        return MOCK_SHELTERS;
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Recommend nearest verified available shelter using PostGIS spatial ST_Distance.
+   */
+  async recommendShelter(coords: LatLng, limit = 5): Promise<ShelterRecommendationResponse> {
+    try {
+      const resp = await apiClient.get<BackendShelterRecommendationResponse>(
+        `/api/v1/shelters/recommend?latitude=${coords.lat}&longitude=${coords.lng}&limit=${limit}`
+      );
+      return {
+        recommended_shelter: resp.recommended_shelter ? mapShelter(resp.recommended_shelter) : null,
+        distance_meters: resp.distance_meters,
+        distance_km: resp.distance_km,
+        available_capacity: resp.available_capacity,
+        citizen_location: coords,
+        available_shelters: resp.available_shelters.map(mapShelter),
+      };
+    } catch (err) {
+      const isDemo = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      if (isDemo) {
+        // Fallback for demo mode
+        const available = MOCK_SHELTERS.filter(
+          (s) => s.status === 'active' && s.occupancy < s.totalCapacity
+        );
+        const first = available[0] || null;
+        return {
+          recommended_shelter: first,
+          distance_meters: 850,
+          distance_km: 0.85,
+          available_capacity: first ? first.totalCapacity - first.occupancy : null,
+          citizen_location: coords,
+          available_shelters: available,
+        };
+      }
+      throw err;
+    }
   },
 
   async getShelter(id: string): Promise<Shelter> {
@@ -105,6 +184,19 @@ export const shelterService = {
     return mapShelter(shelter);
   },
 
+  async verifyShelter(id: string, verified: boolean): Promise<Shelter> {
+    const shelter = await apiClient.patch<BackendShelter>(
+      `/api/v1/shelters/${id}/verify`,
+      { verified },
+      requestOptions(),
+    );
+    return mapShelter(shelter);
+  },
+
+  async deleteShelter(id: string): Promise<void> {
+    await apiClient.delete(`/api/v1/shelters/${id}`, requestOptions());
+  },
+
   async activateShelter(id: string): Promise<Shelter> {
     return this.updateShelter(id, { status: 'active' });
   },
@@ -123,8 +215,8 @@ export const shelterService = {
       accessibilityConstraints: shelter.accessibilityConstraints,
       effectiveAvailableCapacity: shelter.effectiveAvailableCapacity,
       utilizationPercent: (shelter.occupancy / shelter.totalCapacity) * 100,
-      updatedAt: shelter.updatedAt
+      updatedAt: shelter.updatedAt,
     };
     return capacity;
-  }
+  },
 };

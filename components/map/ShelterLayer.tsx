@@ -7,6 +7,7 @@ import type { Shelter } from '@/types';
 interface ShelterLayerProps {
   shelters: Shelter[];
   onShelterClick?: (shelter: Shelter) => void;
+  recommendedShelterId?: string;
 }
 
 function getShelterColor(shelter: Shelter): string {
@@ -25,33 +26,46 @@ function getShelterStatusLabel(shelter: Shelter): string {
   return 'Active';
 }
 
-function createShelterIcon(shelter: Shelter): L.DivIcon {
+function createShelterIcon(shelter: Shelter, isRecommended = false): L.DivIcon {
   const color = getShelterColor(shelter);
+  const border = isRecommended ? '3px solid #10b981' : '2px solid white';
+  const ring = isRecommended
+    ? 'box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4), 0 2px 8px rgba(0,0,0,0.5);'
+    : 'box-shadow:0 1px 4px rgba(0,0,0,0.4);';
+  const label = isRecommended ? '★' : 'S';
+  const size = isRecommended ? 32 : 28;
+  const radius = size / 2;
+
   return L.divIcon({
     html: `<div style="
       background-color:${color};
-      width:28px;height:28px;
+      width:${size}px;height:${size}px;
       border-radius:50%;
-      border:2px solid white;
-      box-shadow:0 1px 4px rgba(0,0,0,0.4);
+      border:${border};
+      ${ring}
       display:flex;align-items:center;justify-content:center;
-      color:white;font-weight:700;font-size:13px;
+      color:white;font-weight:700;font-size:${isRecommended ? '15px' : '13px'};
       font-family:system-ui,sans-serif;
-    ">S</div>`,
+    ">${label}</div>`,
     className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16],
+    iconSize: [size, size],
+    iconAnchor: [radius, radius],
+    popupAnchor: [0, -radius - 2],
   });
 }
 
-export default function ShelterLayer({ shelters, onShelterClick }: ShelterLayerProps) {
+export default function ShelterLayer({
+  shelters,
+  onShelterClick,
+  recommendedShelterId,
+}: ShelterLayerProps) {
   if (!shelters || shelters.length === 0) return null;
 
   return (
     <>
       {shelters.map((shelter) => {
-        const icon = createShelterIcon(shelter);
+        const isRecommended = shelter.id === recommendedShelterId;
+        const icon = createShelterIcon(shelter, isRecommended);
         const pct = Math.round((shelter.occupancy / shelter.totalCapacity) * 100);
         const statusLabel = getShelterStatusLabel(shelter);
         const statusColor = getShelterColor(shelter);
@@ -65,6 +79,22 @@ export default function ShelterLayer({ shelters, onShelterClick }: ShelterLayerP
           >
             <Popup>
               <div style={{ minWidth: 200 }}>
+                {isRecommended && (
+                  <div style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    display: 'inline-block',
+                    marginBottom: 6,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}>
+                    ★ Recommended Safe Shelter
+                  </div>
+                )}
                 <p style={{ fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>
                   {shelter.name}
                 </p>

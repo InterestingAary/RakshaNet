@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/apiClient';
 import { authService } from '@/services/authService';
+import { hazardService } from '@/services/hazardService';
 import { DisasterEvent, HazardZone, TimelineEvent, PriorityCase, ResponseTeam } from '@/types';
 import { MOCK_PRIORITY_CASES } from '@/mock/priorityData';
 import { MOCK_RESPONSE_TEAMS } from '@/mock/responseTeamData';
@@ -94,10 +95,8 @@ export const disasterService = {
     return mapBackendDisaster(updated);
   },
 
-  async getHazardZones(disasterEventId: string): Promise<HazardZone[]> {
-    return apiClient.get<HazardZone[]>(`/api/v1/disasters/${disasterEventId}/hazard-zones`, {
-      headers: authService.getAuthHeaders(),
-    });
+  async getHazardZones(disasterEventId?: string): Promise<HazardZone[]> {
+    return hazardService.getVerifiedHazards(disasterEventId);
   },
 
   async getTimeline(disasterEventId: string): Promise<TimelineEvent[]> {
