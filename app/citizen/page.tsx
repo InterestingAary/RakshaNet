@@ -18,10 +18,11 @@ import { NeedHelpFlow } from '@/components/citizen/NeedHelpFlow';
 import { IncidentReportForm } from '@/components/citizen/IncidentReportForm';
 import { ExposureBanner } from '@/components/citizen/ExposureBanner';
 import CitizenHeader from '@/components/citizen/CitizenHeader';
-import { AlertCircle, AlertTriangle, Eye, EyeOff, FileWarning, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Ban, Eye, EyeOff, FileWarning, Loader2, RefreshCw } from 'lucide-react';
 import { Shelter, LatLng } from '@/types';
 import { useHazards } from '@/hooks/useHazards';
 import { useCitizenExposure } from '@/hooks/useCitizenExposure';
+import { useBlockedRoads } from '@/hooks/useBlockedRoads';
 
 const EmergencyMap = dynamic(() => import('@/components/map/EmergencyMap'), { ssr: false });
 
@@ -36,6 +37,15 @@ function CitizenPortalInner() {
     toggleHazards,
     refresh: refreshHazards,
   } = useHazards({ disasterId: activeDisaster?.id });
+  const {
+    blockedRoads,
+    isLoading: isLoadingBlockedRoads,
+    error: blockedRoadsError,
+    isEmpty: isBlockedRoadsEmpty,
+    showBlockedRoads,
+    toggleBlockedRoads,
+    refresh: refreshBlockedRoads,
+  } = useBlockedRoads({ disasterId: activeDisaster?.id });
   const { route, isLoadingRoute, requestRoute, refreshRoute, clearRoute } = useRoute();
   const { location, setManualLocation, permissionStatus } = useLocation();
 
@@ -200,6 +210,8 @@ function CitizenPortalInner() {
             recommendedShelterId={recommendedShelter?.id}
             incidents={incidents}
             routes={route ? [route] : []}
+            blockedRoads={blockedRoads}
+            showBlockedRoads={showBlockedRoads}
             userLocation={location as any}
             onShelterClick={handleShelterSelect}
             onMapClick={handleMapClick}
@@ -208,30 +220,57 @@ function CitizenPortalInner() {
 
           {/* Hazard Layer Controls & Status Overlay */}
           <div className="absolute top-4 right-4 z-[400] flex flex-col items-end gap-2">
-            <button
-              onClick={toggleHazards}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold shadow-md transition-all ${
-                showHazards
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-              }`}
-              title={showHazards ? 'Hide Hazard Zones' : 'Show Hazard Zones'}
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>Hazards</span>
-              {hazards.length > 0 && (
-                <span
-                  className={`px-1.5 py-0.5 rounded text-xs font-bold ${
-                    showHazards
-                      ? 'bg-red-800 text-white'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
-                  }`}
-                >
-                  {hazards.length}
-                </span>
-              )}
-              {showHazards ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleHazards}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold shadow-md transition-all ${
+                  showHazards
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+                title={showHazards ? 'Hide Hazard Zones' : 'Show Hazard Zones'}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Hazards</span>
+                {hazards.length > 0 && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+                      showHazards
+                        ? 'bg-red-800 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    {hazards.length}
+                  </span>
+                )}
+                {showHazards ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={toggleBlockedRoads}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold shadow-md transition-all ${
+                  showBlockedRoads
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+                title={showBlockedRoads ? 'Hide Blocked Roads' : 'Show Blocked Roads'}
+              >
+                <Ban className="w-4 h-4" />
+                <span>Blockages</span>
+                {blockedRoads.length > 0 && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+                      showBlockedRoads
+                        ? 'bg-amber-800 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    {blockedRoads.length}
+                  </span>
+                )}
+                {showBlockedRoads ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+            </div>
 
             {/* Loading Indicator */}
             {isLoadingHazards && (
@@ -258,6 +297,32 @@ function CitizenPortalInner() {
             {showHazards && isHazardsEmpty && !isLoadingHazards && !hazardError && (
               <div className="px-3 py-1.5 bg-slate-800/85 backdrop-blur text-slate-200 text-xs rounded-md shadow">
                 No active hazard zones verified in this area.
+              </div>
+            )}
+
+            {/* Blocked Roads Status Indicators */}
+            {isLoadingBlockedRoads && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/85 backdrop-blur text-white text-xs rounded-md shadow-md">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                <span>Loading road blockages...</span>
+              </div>
+            )}
+
+            {blockedRoadsError && !isLoadingBlockedRoads && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-600/90 backdrop-blur text-white text-xs rounded-md shadow-lg">
+                <span>Failed to refresh road blockages</span>
+                <button
+                  onClick={() => refreshBlockedRoads()}
+                  className="underline font-bold hover:text-amber-100 flex items-center gap-1 ml-1"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry
+                </button>
+              </div>
+            )}
+
+            {showBlockedRoads && isBlockedRoadsEmpty && !isLoadingBlockedRoads && !blockedRoadsError && (
+              <div className="px-3 py-1.5 bg-slate-800/85 backdrop-blur text-slate-200 text-xs rounded-md shadow">
+                No active road blockages verified in this area.
               </div>
             )}
           </div>

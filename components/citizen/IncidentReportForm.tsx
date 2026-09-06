@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, MapPin, AlertTriangle, Loader2, CheckCircle2, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { incidentService } from '@/services/incidentService';
+import { blockedRoadService } from '@/services/blockedRoadService';
 import { useLocationContext } from '@/context/LocationContext';
 import { LatLng } from '@/types';
 
@@ -79,6 +80,23 @@ export function IncidentReportForm({ isOpen, onClose, defaultLocation }: Inciden
         description,
         location: actualLocation || { lat: 0, lng: 0 },
       });
+
+      if (type === 'Road Blockage' && actualLocation && actualLocation.lat !== 0 && actualLocation.lng !== 0) {
+        try {
+          await blockedRoadService.reportBlockedRoad({
+            road_name: 'Reported Road Obstruction',
+            description,
+            latitude: actualLocation.lat,
+            longitude: actualLocation.lng,
+            blockage_type: 'OTHER',
+            severity: 'FULL_CLOSURE',
+            disaster_id: 'evt-001',
+          });
+        } catch (e) {
+          console.warn('[IncidentReportForm] blocked road submission notice:', e);
+        }
+      }
+
       setReportId(response.id);
       setStep(2);
     } catch (error) {

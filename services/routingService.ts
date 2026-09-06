@@ -1,6 +1,8 @@
 import { apiClient } from '@/lib/apiClient';
 import { authService } from '@/services/authService';
 import type { EvacuationRoute, LatLng } from '@/types';
+import { blockedRoadService } from './blockedRoadService';
+import type { BlockedRoad, BlockageType, BlockageSeverity } from '@/types/blockedRoad';
 
 interface RelocationRecommendation {
   shelter_id: string;
@@ -68,8 +70,23 @@ export const routingService = {
     return this.getSafeRoute(from, toShelterId, disasterId);
   },
 
-  async reportRouteBlocked(): Promise<void> {
-    throw new Error('Route blocking is not supported by the relocation API');
+  async reportRouteBlocked(params: {
+    from: LatLng;
+    disasterId?: string;
+    roadName?: string;
+    description?: string;
+    blockageType?: BlockageType;
+    severity?: BlockageSeverity;
+  }): Promise<BlockedRoad> {
+    return blockedRoadService.reportBlockedRoad({
+      road_name: params.roadName || 'Reported Evacuation Obstacle',
+      disaster_id: params.disasterId || 'evt-001',
+      latitude: params.from.lat,
+      longitude: params.from.lng,
+      blockage_type: params.blockageType || 'OTHER',
+      severity: params.severity || 'FULL_CLOSURE',
+      description: params.description || 'Blocked road reported along evacuation path',
+    });
   },
 
   async getEvacuationRoute(from: LatLng, _toShelterId: string, signal?: AbortSignal, disasterId?: string): Promise<EvacuationRoute> {

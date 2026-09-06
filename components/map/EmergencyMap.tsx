@@ -21,12 +21,12 @@ import type {
   IncidentReport,
   EvacuationRoute,
   ResponseTeam,
+  BlockedRoad,
 } from '@/types';
 
 // Fix Leaflet's broken default icon in webpack/Next.js environments
 function fixLeafletIcons() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl:
@@ -52,6 +52,7 @@ export interface MapProps {
   incidents?: IncidentReport[];
   routes?: EvacuationRoute[];
   responseTeams?: ResponseTeam[];
+  blockedRoads?: BlockedRoad[];
   onShelterClick?: (shelter: Shelter) => void;
   onIncidentClick?: (incident: IncidentReport) => void;
   onMapClick?: (latlng: LatLng) => void;
@@ -94,6 +95,7 @@ export default function EmergencyMap({
   incidents = [],
   routes = [],
   responseTeams = [],
+  blockedRoads = [],
   onShelterClick,
   onIncidentClick,
   onMapClick,
@@ -142,7 +144,12 @@ export default function EmergencyMap({
       {showRoutes &&
         routes.map((route) => <RouteLayer key={route.id} route={route} />)}
 
-      {showBlockedRoads && <BlockedRoadLayer incidents={incidents} />}
+      {showBlockedRoads && (
+        <BlockedRoadLayer
+          blockedRoads={blockedRoads}
+          incidents={incidents}
+        />
+      )}
 
       {showResponseTeams && <ResponseTeamLayer teams={responseTeams} />}
 
