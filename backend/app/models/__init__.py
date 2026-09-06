@@ -4,6 +4,16 @@ from app.models.report import Report, ReportStatus, ReportType
 from app.models.shelter import Shelter, ShelterStatus
 from app.models.user import User
 
+from app.models.hazard_zone import HazardZone
+from app.models.blocked_road import (
+    BlockedRoad,
+    BlockedRoadAuditLog,
+    BlockageType,
+    BlockageSeverity,
+    BlockedRoadStatus,
+    AuditAction,
+)
+
 __all__ = [
 	"Disaster",
 	"DisasterSeverity",
@@ -20,4 +30,10 @@ __all__ = [
 	"ShelterStatus",
 	"User",
 	"HazardZone",
+	"BlockedRoad",
+	"BlockedRoadAuditLog",
+	"BlockageType",
+	"BlockageSeverity",
+	"BlockedRoadStatus",
+	"AuditAction",
 ]
