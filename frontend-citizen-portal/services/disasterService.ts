@@ -99,10 +99,18 @@ export const disasterService = {
     return hazardService.getVerifiedHazards(disasterEventId);
   },
 
-  async getTimeline(disasterEventId: string): Promise<TimelineEvent[]> {
-    return apiClient.get<TimelineEvent[]>(`/api/v1/disasters/${disasterEventId}/timeline`, {
-      headers: authService.getAuthHeaders(),
-    });
+  async getTimeline(disasterEventId?: string): Promise<TimelineEvent[]> {
+    try {
+      if (!disasterEventId || disasterEventId === 'evt-001') {
+        return [];
+      }
+      const events = await apiClient.get<TimelineEvent[]>(`/api/v1/disasters/${disasterEventId}/timeline`, {
+        headers: authService.getAuthHeaders(),
+      });
+      return Array.isArray(events) ? events : [];
+    } catch {
+      return [];
+    }
   },
 
   async getPriorityCases(): Promise<PriorityCase[]> {

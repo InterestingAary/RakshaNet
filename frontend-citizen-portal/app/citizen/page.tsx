@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { AuthProvider } from '@/context/AuthContext';
 import { DisasterProvider } from '@/context/DisasterContext';
 import { LocationProvider } from '@/context/LocationContext';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -370,12 +371,14 @@ function CitizenPortalInner() {
 
 export default function CitizenPage() {
   return (
-    <LanguageProvider>
-      <LocationProvider>
-        <DisasterProvider>
-          <CitizenPortalInner />
-        </DisasterProvider>
-      </LocationProvider>
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <LocationProvider>
+          <DisasterProvider>
+            <CitizenPortalInner />
+          </DisasterProvider>
+        </LocationProvider>
+      </LanguageProvider>
+    </AuthProvider>
   );
 }

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user, require_authority
 from app.core.database import get_db
+from app.models.blocked_road import BlockedRoad
 from app.models.disaster import Disaster, DisasterStatus
 from app.models.user import ROLE_AUTHORITY, User
 from app.schemas.disaster import DisasterCreate, DisasterResponse, DisasterUpdate
@@ -100,3 +101,66 @@ def update_disaster(
     db.commit()
     db.refresh(disaster)
     return disaster
+
+
+@router.get("/{disaster_id}/timeline")
+def get_disaster_timeline(
+    disaster_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    disaster = find_disaster(disaster_id, db)
+    events = [
+        {
+            "id": f"evt-{disaster.id}",
+            "timestamp": disaster.created_at.isoformat() if hasattr(disaster, "created_at") and disaster.created_at else "",
+            "type": "event_created",
+            "title": f"Emergency Declared: {disaster.title}",
+            "description": disaster.description,
+            "severity": str(disaster.severity).lower(),
+            "relatedEntityId": str(disaster.id),
+            "relatedEntityType": "disaster",
+        }
+    ]
+
+    try:
+        roads = list(db.scalars(select(BlockedRoad).where(BlockedRoad.disaster_id == disaster.id)).all())
+        for road in roads:
+            if hasattr(road, "created_at") and road.created_at:
+                events.append({
+                    "id": f"block-{road.id}",
+                    "timestamp": road.created_at.isoformat(),
+                    "type": "route_blocked",
+                    "title": f"Road Obstruction: {road.road_name}",
+                    "description": road.description,
+                    "severity": str(road.severity).lower(),
+                    "relatedEntityId": str(road.id),
+                    "relatedEntityType": "blocked_road",
+                })
+            if hasattr(road, "verified_at") and road.verified_at:
+                events.append({
+                    "id": f"verified-{road.id}",
+                    "timestamp": road.verified_at.isoformat(),
+                    "type": "alert_issued",
+                    "title": f"Obstruction Verified: {road.road_name}",
+                    "description": "Patrol verified closure. Route avoided.",
+                    "severity": "high",
+                    "relatedEntityId": str(road.id),
+                    "relatedEntityType": "blocked_road",
+                })
+            if hasattr(road, "cleared_at") and road.cleared_at:
+                events.append({
+                    "id": f"cleared-{road.id}",
+                    "timestamp": road.cleared_at.isoformat(),
+                    "type": "incident_resolved",
+                    "title": f"Road Cleared: {road.road_name}",
+                    "description": "Roadway reopened for normal evacuation traffic.",
+                    "severity": "low",
+                    "relatedEntityId": str(road.id),
+                    "relatedEntityType": "blocked_road",
+                })
+    except Exception:
+        pass
+
+    events.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return events

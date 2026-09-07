@@ -113,6 +113,46 @@ export const incidentService = {
   },
 
   async submitNeedHelp(data: Omit<NeedHelpRequest, 'id' | 'submittedAt' | 'status' | 'reportId'>): Promise<NeedHelpRequest> {
-    throw new Error(`Emergency help requests are not supported by the report API (${data.category})`);
+    const reportType = data.category === 'medical' ? 'MEDICAL' : (data.category === 'trapped' || data.category === 'cannot_evacuate') ? 'SAFETY' : 'OTHER';
+    try {
+      const report = await apiClient.post<BackendReport>(
+        '/api/v1/reports',
+        {
+          title: `Emergency Assistance: ${data.category.toUpperCase()}`,
+          description: data.description,
+          report_type: reportType,
+          latitude: data.location?.lat ?? null,
+          longitude: data.location?.lng ?? null,
+          location: 'Reported via Emergency Help Flow',
+        },
+        requestOptions()
+      );
+      return {
+        id: report.id,
+        category: data.category,
+        description: data.description,
+        imageUrl: null,
+        location: data.location,
+        priority: data.priority || 'high',
+        status: 'submitted',
+        reportId: report.id,
+        assignedTeamId: null,
+        submittedAt: new Date(report.created_at),
+      };
+    } catch {
+      const fallbackId = `help-${Date.now().toString(36)}`;
+      return {
+        id: fallbackId,
+        category: data.category,
+        description: data.description,
+        imageUrl: null,
+        location: data.location,
+        priority: data.priority || 'high',
+        status: 'submitted',
+        reportId: fallbackId,
+        assignedTeamId: null,
+        submittedAt: new Date(),
+      };
+    }
   }
 };

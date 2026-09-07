@@ -90,7 +90,7 @@ export function IncidentReportForm({ isOpen, onClose, defaultLocation }: Inciden
             longitude: actualLocation.lng,
             blockage_type: 'OTHER',
             severity: 'FULL_CLOSURE',
-            disaster_id: 'evt-001',
+            disaster_id: undefined,
           });
         } catch (e) {
           console.warn('[IncidentReportForm] blocked road submission notice:', e);

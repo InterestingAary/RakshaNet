@@ -87,7 +87,7 @@ export function DisasterProvider({ children }: DisasterProviderProps) {
 
     try {
       const disaster = await disasterService.getActiveDisaster().catch(() => null);
-      const disasterId = disaster?.id || "evt-001";
+      const disasterId = disaster?.id && disaster.id !== 'evt-001' ? disaster.id : undefined;
       const [
         zones,
         fetchedAlerts,

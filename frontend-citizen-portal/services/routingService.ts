@@ -78,9 +78,11 @@ export const routingService = {
     blockageType?: BlockageType;
     severity?: BlockageSeverity;
   }): Promise<BlockedRoad> {
+    const isMock = params.disasterId === 'evt-001';
+    const validDisasterId = params.disasterId && !isMock ? params.disasterId : undefined;
     return blockedRoadService.reportBlockedRoad({
       road_name: params.roadName || 'Reported Evacuation Obstacle',
-      disaster_id: params.disasterId || 'evt-001',
+      disaster_id: validDisasterId,
       latitude: params.from.lat,
       longitude: params.from.lng,
       blockage_type: params.blockageType || 'OTHER',

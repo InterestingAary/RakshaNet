@@ -1,6 +1,6 @@
 export type { Severity, Status, LatLng, BoundingBox } from './common';
 export type { DisasterEvent, HazardZone } from './disaster';
-export type { Shelter, ShelterCapacity } from './shelter';
+export type { Shelter, ShelterCapacity, ShelterRecommendationResponse } from './shelter';
 export type { Citizen, VulnerabilityProfile } from './citizen';
 export type { PriorityCase } from './priority';
 export type { EvacuationRoute, RouteWarning } from './route';

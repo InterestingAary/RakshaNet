@@ -16,6 +16,7 @@ import DemoController from '@/components/authority/DemoController';
 import { blockedRoadService } from '@/services/blockedRoadService';
 import { shelterService } from '@/services/shelterService';
 import { incidentService } from '@/services/incidentService';
+import { disasterService } from '@/services/disasterService';
 
 import { useDisasterContext } from '@/context/DisasterContext';
 import { useDemo } from '@/context/DemoContext';
@@ -33,12 +34,14 @@ export default function AuthorityDashboardPage() {
   const { isDemoMode } = useDemo();
   const { 
     activeDisaster,
+    hazardZones,
     shelters,
     incidents,
     priorityCases,
     responseTeams,
     timeline,
     blockedRoads,
+    refresh,
     updateBlockedRoad,
     updateShelter,
     updateIncident,
@@ -46,10 +49,7 @@ export default function AuthorityDashboardPage() {
 
   const handleUpdateShelter = async (shelter: any) => {
     try {
-      // Assuming shelter is of type Shelter
       const updated = await shelterService.updateShelter(shelter.id, shelter);
-      // Wait, updateShelter isn't imported from context. Let's get it.
-      // Ah, updateShelter is already extracted from useDisasterContext above!
       updateShelter(updated);
     } catch (err) {
       console.error('Failed to update shelter', err);
@@ -69,8 +69,38 @@ export default function AuthorityDashboardPage() {
     }
   };
 
-  const handleCreateEvent = (eventData: any) => {
-    // console.log('Create event', eventData);
+  const handleCreateEvent = async (eventData: any) => {
+    try {
+      const created = await disasterService.createDisaster({
+        name: eventData.name || 'Emergency Event',
+        type: eventData.type || 'flood',
+        severity: eventData.severity || 'high',
+        status: 'active',
+        description: eventData.description || 'Emergency incident declared',
+        instructions: eventData.instructions || '',
+        affectedArea: {
+          north: 16.5062,
+          south: 16.5062,
+          east: 80.6480,
+          west: 80.6480,
+        },
+        startTime: new Date(),
+        affectedPopulation: 0,
+      });
+
+      if (eventData.status === 'active') {
+        try {
+          await disasterService.updateDisaster(created.id, { status: 'active' });
+        } catch (e) {
+          console.warn('Disaster activation note:', e);
+        }
+      }
+
+      await refresh();
+      setIsCreateEventOpen(false);
+    } catch (err) {
+      console.error('Failed to create disaster event', err);
+    }
   };
 
   const handleVerifyBlockedRoad = async (id: string, notes?: string) => {
@@ -207,7 +237,13 @@ export default function AuthorityDashboardPage() {
 
         {/* Main Map Area */}
         <main className="flex-1 relative bg-slate-950">
-          <EmergencyMap />
+          <EmergencyMap 
+            hazardZones={hazardZones}
+            shelters={shelters}
+            incidents={incidents}
+            blockedRoads={blockedRoads}
+            responseTeams={responseTeams}
+          />
           
           {/* Floating Action Button */}
           <button
